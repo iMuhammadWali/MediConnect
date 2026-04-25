@@ -1,8 +1,9 @@
 import {View, Image, Text, StyleSheet, ToastAndroid} from "react-native"
 import AppButton from '../components/AppButton';
-import { Link } from "@react-navigation/native";
+import { Link, useNavigation } from "@react-navigation/native";
 
 const OnboardingPage = () =>{
+    const navigation = useNavigation();
     return (
     <View style={{flex: 1, paddingBottom: 70, alignItems:'center', paddingHorizontal:20}}>
         <View style={{
@@ -19,12 +20,11 @@ const OnboardingPage = () =>{
                 <Text style={{ marginTop:10,marginBottom: 100, fontSize: 16
                 }}>Your health, simplified</Text>
 
-            <Link screen="Login"> Go to login</Link>
             </View>
 
             <AppButton 
                 text="Get Started" 
-                onPress={()=>{ToastAndroid.show("Get Started Button Pressed", ToastAndroid.SHORT)}}
+                onPress={()=>{navigation.navigate("Login")}}
                 height={50} 
                 width="100%"/>
 
