@@ -4,7 +4,7 @@ import App from "../App";
 // I will probably use poppings
 const AppButton = ({text, onPress, width, height}) =>{
     return (
-        <Pressable
+        <TouchableOpacity
             onPress={onPress}
             style={{
                 backgroundColor:"#3b5bdb",
@@ -16,7 +16,7 @@ const AppButton = ({text, onPress, width, height}) =>{
             }}
         >
             <Text style={{color:"white"}}>{text}</Text>
-        </Pressable>
+        </TouchableOpacity>
     )
 }
 

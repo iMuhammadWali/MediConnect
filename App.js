@@ -9,17 +9,21 @@ import LoginPage from './pages/LoginPage';
 const RootStack = createNativeStackNavigator({
   initialRouteName: 'Onboarding',
   screenOptions: {
-    contentStyle: { backgroundColor: "#fff" }
+    contentStyle: { backgroundColor: "#ffffff" }
   },
   screens: {
     'Onboarding': {
       'screen': OnboardingPage,
       'options': {
         headerShown: false,
-        'title' : ''
       }
     },
-    'Login': LoginPage
+    'Login': {
+      'screen': LoginPage,
+      'options':{
+        headerShown: false
+      }
+    }
   }
 });
 
