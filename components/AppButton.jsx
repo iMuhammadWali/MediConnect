@@ -1,10 +1,10 @@
-import { Button, ToastAndroid, TouchableOpacity, Text } from "react-native"
+import { Button, ToastAndroid, TouchableOpacity, Text, Pressable } from "react-native"
 import App from "../App";
 
 // I will probably use poppings
 const AppButton = ({text, onPress, width, height}) =>{
     return (
-        <TouchableOpacity
+        <Pressable
             onPress={onPress}
             style={{
                 backgroundColor:"#3b5bdb",
@@ -16,7 +16,7 @@ const AppButton = ({text, onPress, width, height}) =>{
             }}
         >
             <Text style={{color:"white"}}>{text}</Text>
-        </TouchableOpacity>
+        </Pressable>
     )
 }
 
