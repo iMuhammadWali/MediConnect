@@ -1,19 +1,28 @@
-import {View, Image, Text, StyleSheet} from "react-native"
+import {View, Image, Text, StyleSheet, ToastAndroid} from "react-native"
 import AppButton from '../components/AppButton';
 
 const Onboarding = () =>{
     return (
-    <View style={{flex: 1, paddingBottom: 80, alignItems:'center'}}>
-        <View style={styles.container}>
-            <Image 
-                source={require('../assets/logo.png')}
-                style={{ width: 50, height: 50 }}
-            />
+    <View style={{flex: 1, paddingBottom: 70, alignItems:'center', paddingHorizontal:20}}>
+        <View style={{
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center'
+            }}>
+                <Image 
+                    source={require('../assets/logo.png')}
+                    style={{ width: 50, height: 50 }}
+                />
     
-            <Text style={styles.title}>MediConnect</Text>
-            <Text style={styles.tagLine}>Your health, simplified</Text>    
-        </View>
-        <AppButton />
+                <Text style={styles.title}>MediConnect</Text>
+                <Text style={styles.tagLine}>Your health, simplified</Text>    
+            </View>
+
+            <AppButton 
+                text="Get Started" 
+                onPress={()=>{ToastAndroid.show("Get Started Button Pressed", ToastAndroid.SHORT)}}
+                height={50} 
+                width="100%"/>
     </View>
     )
 }
