@@ -10,14 +10,14 @@ const HomePage = () => {
 
     // This should be hardcoded.
     const services = [
-        { id: 1, name: "Emergency", icon: "🚨", color: "#ba1a1a", bgColor: "#ffdad6" },
-        { id: 2, name: "Hospital", icon: "🏥", color: "#00746a", bgColor: "#84f6e6" },
-        { id: 3, name: "Blood", icon: "🩸", color: "#00746a", bgColor: "#84f6e6" },
-        { id: 4, name: "Prescription", icon: "📋", color: "#00746a", bgColor: "#84f6e6" },
-        { id: 5, name: "Doctor", icon: "👨‍⚕️", color: "#ffffff", bgColor: "#3b5bdb", isActive: true },
-        { id: 6, name: "Check Up", icon: "🏥", color: "#00746a", bgColor: "#84f6e6" },
-        { id: 7, name: "Location", icon: "📍", color: "#00746a", bgColor: "#84f6e6" },
-        { id: 8, name: "Radiology", icon: "🔬", color: "#00746a", bgColor: "#84f6e6" },
+        { id: 1, name: "Emergency", icon: "", color: "#ba1a1a", bgColor: "#ffdad6" },
+        { id: 2, name: "Hospital", icon: "", color: "#00746a", bgColor: "#84f6e6" },
+        { id: 3, name: "Blood", icon: "", color: "#00746a", bgColor: "#84f6e6" },
+        { id: 4, name: "Prescription", icon: "", color: "#00746a", bgColor: "#84f6e6" },
+        { id: 5, name: "Doctor", icon: "", color: "#ffffff", bgColor: "#3b5bdb", isActive: true },
+        { id: 6, name: "Check Up", icon: "", color: "#00746a", bgColor: "#84f6e6" },
+        { id: 7, name: "Location", icon: "", color: "#00746a", bgColor: "#84f6e6" },
+        { id: 8, name: "Radiology", icon: "", color: "#00746a", bgColor: "#84f6e6" },
     ];
 
     // This should be loaded from firebase.
@@ -70,25 +70,9 @@ const HomePage = () => {
         </View>
     );
 
-    // This will be remove from this code.
-    const renderNavItem = ({ item }) => (
-        <TouchableOpacity style={[
-            styles.navItem,
-            item.isActive && styles.activeNavItem
-        ]}>
-            <Text style={[
-                styles.navIcon,
-                item.isActive && styles.activeNavIcon
-            ]}>{item.icon}</Text>
-            <Text style={[
-                styles.navLabel,
-                item.isActive && styles.activeNavLabel
-            ]}>{item.name}</Text>
-        </TouchableOpacity>
-    );
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={styles.container} edges={['top']}>            
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 {/* Top App Bar */}
                 <View style={styles.header}>
@@ -182,20 +166,9 @@ const HomePage = () => {
                     />
                 </View>
             </ScrollView>
-
-            {/* Bottom Navigation Bar */}
-            <View style={styles.bottomNav}>
-                <FlatList
-                    data={navItems}
-                    renderItem={renderNavItem}
-                    keyExtractor={(item) => item.id.toString()}
-                    horizontal
-                    scrollEnabled={false}
-                    contentContainerStyle={styles.navContainer}
-                />
-            </View>
         </SafeAreaView>
     );
+
 };
 
 
