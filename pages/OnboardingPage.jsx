@@ -28,7 +28,7 @@ const OnboardingPage = () => {
 
                 <AppButton
                     text="Get Started"
-                    onPress={() => { navigation.navigate("Login") }}
+                    onPress={() => { navigation.navigate("Home") }}
                     height={50}
                     width="100%" />
 

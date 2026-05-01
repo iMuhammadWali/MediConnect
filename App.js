@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import OnboardingPage from './pages/OnboardingPage';
 import LoginPage from './pages/LoginPage';
+import MediConnectHome from './pages/HomePage';
 
 const RootStack = createNativeStackNavigator({
   initialRouteName: 'Onboarding',
@@ -20,6 +21,12 @@ const RootStack = createNativeStackNavigator({
     },
     'Login': {
       'screen': LoginPage,
+      'options':{
+        headerShown: false
+      }
+    },
+    'Home':{
+      'screen': MediConnectHome,
       'options':{
         headerShown: false
       }
