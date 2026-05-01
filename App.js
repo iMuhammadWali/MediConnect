@@ -15,9 +15,13 @@ import HomePage from './pages/HomePage';
 import { Platform } from 'react-native';
 import { useLinkBuilder, useTheme } from '@react-navigation/native';
 import { PlatformPressable } from '@react-navigation/elements';
-import SchedulePage from "./pages/SchedulePage";
+
+import SchedulesPage from "./pages/SchedulesPage";
 import MessagesPage from "./pages/MessagesPage";
 import SettingsPage from "./pages/SettingsPage";
+import FindDoctorsPage from "./pages/FindDoctorsPage";
+import EmergencyPage from "./pages/EmergencyPage";
+import DoctorDetailsPage from "./pages/DoctorDetails";
 
 const myTabs = createBottomTabNavigator({
   initialRouteName: 'Home',
@@ -33,7 +37,7 @@ const myTabs = createBottomTabNavigator({
     },
 
     Schedule: {
-      screen: SchedulePage,
+      screen: SchedulesPage,
       options:{ 
         // headerShown: false,
         tabBarIcon: ({color, size}) => (
@@ -63,7 +67,7 @@ const myTabs = createBottomTabNavigator({
 })
 
 const RootStack = createNativeStackNavigator({
-  initialRouteName: 'Onboarding',
+  initialRouteName: 'Home',
   screenOptions: {
     contentStyle: { backgroundColor: "#ffffff" }
   },
@@ -83,6 +87,15 @@ const RootStack = createNativeStackNavigator({
     AppTabs: {
       screen: myTabs,
       options: { headerShown: false }
+    },
+    FindDoctors: {
+      screen: FindDoctorsPage
+    },
+    Emergency: {
+      screen: EmergencyPage
+    },
+    DoctorDetails: {
+      screen: DoctorDetailsPage
     }
   }
 });
