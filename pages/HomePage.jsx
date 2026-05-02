@@ -36,9 +36,11 @@ const HomePage = () => {
     };
 
     useEffect(() => {
-        if (auth.currentUser) {
-            setDisplayName(auth.currentUser.displayName);
-        }
+        setTimeout(()=>{
+            if (auth.currentUser) {
+                setDisplayName(auth.currentUser.displayName);
+            }
+        }, 500);
     }, []);
 
     const filteredSpecialists = topSpecialists.filter(item => 

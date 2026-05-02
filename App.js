@@ -8,7 +8,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, database } from "./config/firebase";
-import { onValue, ref } from "firebase/database";
+import { get, onValue, ref } from "firebase/database";
 
 import OnboardingPage from "./pages/OnboardingPage";
 import LoginPage from "./pages/LoginPage";
@@ -36,7 +36,6 @@ import { BloodBankPage, PrescriptionPage, CheckUpPage } from "./pages/ComingSoon
 import ChatPage from "./pages/ChatPage";
 import PatientDetailsPage from "./pages/PatientDetailsPage";
 
-// Navigators
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -187,7 +186,7 @@ export default function App() {
     let roleUnsubscribe = null;
 
     const authUnsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      // Clean up previous role listener when auth state changes
+      // Clean up previous role listener when auth state changes because new one will be attached.
       if (roleUnsubscribe) {
         roleUnsubscribe();
         roleUnsubscribe = null;
