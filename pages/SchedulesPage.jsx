@@ -1,108 +1,129 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, FlatList } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, FlatList, ActivityIndicator, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useState } from "react";
+import { ref, onValue, update } from "firebase/database";
+import { database, auth } from "../config/firebase";
 
 const SchedulesPage = () => {
     const navigation = useNavigation();
+    const [appointments, setAppointments] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [activeTab, setActiveTab] = useState("All");
+
+    useEffect(() => {
+        const appRef = ref(database, "appointments");
+        const unsub = onValue(appRef, snapshot => {
+            const res = [];
+            if (snapshot.exists()) {
+                snapshot.forEach(c => {
+                    const data = c.val();
+                    if (data.patientId === auth.currentUser?.uid || data.doctorId === auth.currentUser?.uid) {
+                        res.push({ id: c.key, ...data });
+                    }
+                });
+            }
+            setAppointments(res.reverse());
+            setLoading(false);
+        });
+        return unsub;
+    }, []);
 
     const filterTabs = [
-        { id: 1, name: "All", isActive: true },
-        { id: 2, name: "Upcoming", isActive: false },
-        { id: 3, name: "Completed", isActive: false },
-        { id: 4, name: "Cancel", isActive: false },
+        { id: 1, name: "All", value: "All" },
+        { id: 2, name: "Upcoming", value: "Upcoming" },
+        { id: 3, name: "Completed", value: "Completed" },
+        { id: 4, name: "Cancel", value: "Cancel" },
     ];
 
-    const appointments = [
-        {
-            id: 1,
-            initials: "RA",
-            name: "Dr. Robert Anderson",
-            specialty: "Cardiologist",
-            hospital: "City General Hospital",
-            status: "Upcoming",
-            statusColor: "#F39C12",
-            statusBgColor: "#F39C12",
-            date: "Mon, 12 Oct 2023",
-            time: "10:30 AM - 11:00 AM",
-            buttonText: "Reschedule",
-            opacity: 1,
-        },
-        {
-            id: 2,
-            initials: "SL",
-            name: "Dr. Sarah Lee",
-            specialty: "Dermatologist",
-            hospital: "Westside Clinic",
-            status: "Complete",
-            statusColor: "#005951",
-            statusBgColor: "#84f6e6",
-            date: "Fri, 02 Sep 2023",
-            time: "02:00 PM - 02:45 PM",
-            buttonText: "Make new appointment",
-            opacity: 0.8,
-        },
-        {
-            id: 3,
-            initials: "MK",
-            name: "Dr. Michael Chen",
-            specialty: "Neurologist",
-            hospital: "Central Medical Center",
-            status: "Cancel",
-            statusColor: "#93000a",
-            statusBgColor: "#ffdad6",
-            date: "Wed, 15 Aug 2023",
-            time: "09:00 AM - 10:00 AM",
-            buttonText: "Reschedule",
-            opacity: 0.7,
-        },
-    ];
+    const filteredAppointments = appointments.filter(app => {
+        const matchesSearch = app.doctorName?.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesTab = activeTab === "All" || app.status === activeTab;
+        return matchesSearch && matchesTab;
+    });
+
+    const getStatusStyle = (status) => {
+        switch (status) {
+            case "Upcoming": return { color: "#F39C12", bgColor: "rgba(243, 156, 18, 0.1)" };
+            case "Completed": return { color: "#005951", bgColor: "#84f6e6" };
+            case "Cancel": return { color: "#93000a", bgColor: "#ffdad6" };
+            default: return { color: "#747686", bgColor: "#e6e8eb" };
+        }
+    };
+
+    const handleAction = (item) => {
+        if (item.status === "Upcoming") {
+            Alert.alert("Cancel Appointment", "Are you sure you want to cancel?", [
+                { text: "No", style: "cancel" },
+                { text: "Yes", onPress: () => {
+                    update(ref(database, `appointments/${item.id}`), { status: "Cancel" })
+                        .catch(err => alert(err.message));
+                }}
+            ]);
+        } else {
+            if (auth.currentUser?.uid === item.doctorId) {
+                navigation.navigate("PatientDetails", { patientId: item.patientId });
+            } else {
+                navigation.navigate("DoctorDetails", { doctorId: item.doctorId });
+            }
+        }
+    };
 
     const renderFilterTab = ({ item }) => (
         <TouchableOpacity style={[
             styles.filterTab,
-            item.isActive && styles.activeFilterTab
-        ]}>
+            activeTab === item.value && styles.activeFilterTab
+        ]} onPress={() => setActiveTab(item.value)}>
             <Text style={[
                 styles.filterTabText,
-                item.isActive && styles.activeFilterTabText
+                activeTab === item.value && styles.activeFilterTabText
             ]}>{item.name}</Text>
         </TouchableOpacity>
     );
 
-    const renderAppointmentCard = ({ item }) => (
-        <View style={[styles.appointmentCard, { opacity: item.opacity }]}>
-            <View style={styles.cardLeft}>
-                <View style={styles.doctorAvatar}>
-                    <Text style={styles.doctorInitials}>{item.initials}</Text>
-                </View>
-                <View style={styles.appointmentInfo}>
-                    <Text style={styles.doctorName}>{item.name}</Text>
-                    <Text style={styles.doctorDetails}>
-                        {item.specialty} • <Text style={styles.hospitalName}>{item.hospital}</Text>
-                    </Text>
-                    <View style={styles.statusBadge}>
-                        <Text style={[styles.statusText, { color: item.statusColor }]}>
-                            {item.status}
+    const renderAppointmentCard = ({ item }) => {
+        const statusStyle = getStatusStyle(item.status);
+        const initials = item.doctorName ? item.doctorName.replace("Dr. ", "").substring(0, 2).toUpperCase() : "DR";
+        return (
+            <View style={[styles.appointmentCard, { opacity: item.status === "Cancel" ? 0.7 : 1 }]}>
+                <View style={styles.cardLeft}>
+                    <View style={styles.doctorAvatar}>
+                        <Text style={styles.doctorInitials}>{initials}</Text>
+                    </View>
+                    <View style={styles.appointmentInfo}>
+                        <Text style={styles.doctorName}>{item.doctorName}</Text>
+                        <Text style={styles.doctorDetails}>
+                            Specialist • <Text style={styles.hospitalName}>Clinic</Text>
                         </Text>
-                    </View>
-                    <View style={styles.dateTimeContainer}>
-                        <View style={styles.dateTimeItem}>
-                            <Ionicons name="calendar" size={18} color="#747686" />
-                            <Text style={styles.dateTimeText}>{item.date}</Text>
+                        <View style={styles.statusBadge}>
+                            <Text style={[styles.statusText, { color: statusStyle.color, backgroundColor: statusStyle.bgColor }]}>
+                                {item.status}
+                            </Text>
                         </View>
-                        <View style={styles.dateTimeItem}>
-                            <Ionicons name="time" size={18} color="#747686" />
-                            <Text style={styles.dateTimeText}>{item.time}</Text>
+                        <View style={styles.dateTimeContainer}>
+                            <View style={styles.dateTimeItem}>
+                                <Ionicons name="calendar" size={18} color="#747686" />
+                                <Text style={styles.dateTimeText}>{item.date}</Text>
+                            </View>
+                            <View style={styles.dateTimeItem}>
+                                <Ionicons name="time" size={18} color="#747686" />
+                                <Text style={styles.dateTimeText}>{item.time}</Text>
+                            </View>
                         </View>
                     </View>
                 </View>
+                <TouchableOpacity style={styles.actionButton} onPress={() => handleAction(item)}>
+                    <Text style={styles.actionButtonText}>
+                        {item.status === "Upcoming" 
+                            ? "Cancel Appointment" 
+                            : (auth.currentUser?.uid === item.doctorId ? "View Patient" : "Book Again")}
+                    </Text>
+                </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.actionButton}>
-                <Text style={styles.actionButtonText}>{item.buttonText}</Text>
-            </TouchableOpacity>
-        </View>
-    );
+        );
+    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -126,6 +147,8 @@ const SchedulesPage = () => {
                         style={styles.searchInput}
                         placeholder="Find schedule"
                         placeholderTextColor="#747686"
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
                     />
                 </View>
 
@@ -139,14 +162,18 @@ const SchedulesPage = () => {
                     contentContainerStyle={styles.filtersList}
                 />
 
-                {/* Appointments List */}
-                <FlatList
-                    data={appointments}
-                    renderItem={renderAppointmentCard}
-                    keyExtractor={(item) => item.id.toString()}
-                    scrollEnabled={false}
-                    contentContainerStyle={styles.appointmentsList}
-                />
+                {loading ? <ActivityIndicator size="large" color="#1a40c2" style={{marginTop: 20}} /> :
+                    filteredAppointments.length === 0 ? (
+                        <Text style={{textAlign: "center", color: "#747686", marginTop: 40}}>No appointments found.</Text>
+                    ) :
+                    <FlatList
+                        data={filteredAppointments}
+                        renderItem={renderAppointmentCard}
+                        keyExtractor={(item) => item.id.toString()}
+                        scrollEnabled={false}
+                        contentContainerStyle={styles.appointmentsList}
+                    />
+                }
             </ScrollView>
         </SafeAreaView>
     );

@@ -12,6 +12,7 @@ import { useNavigation } from "@react-navigation/native";
 
 const HomePage = () => {
     const [displayName, setDisplayName] = useState(null);
+    const [searchQuery, setSearchQuery] = useState("");
     const navigation = useNavigation();
     const services = [
         { id: 1, name: "Emergency", icon: "warning", screen: "Emergency" },
@@ -20,7 +21,6 @@ const HomePage = () => {
         { id: 4, name: "Prescription", icon: "document-text", screen: "Prescription" },
         { id: 5, name: "Doctor", icon: "medkit", screen: "FindDoctors" },
         { id: 6, name: "Check Up", icon: "heart", screen: "CheckUp" },
-        { id: 7, name: "Location", icon: "location", screen: "Locations" },
         { id: 8, name: "Radiology", icon: "scan", screen: "Radiology" },
     ];
 
@@ -41,6 +41,11 @@ const HomePage = () => {
         }
     }, []);
 
+    const filteredSpecialists = topSpecialists.filter(item => 
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        item.specialty.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
     const handleServicePress = (service) => {
         navigation.navigate(service.screen);
     };
@@ -49,7 +54,11 @@ const HomePage = () => {
         <SafeAreaView style={styles.container} edges={['top']}>
             <TopBar userName={displayName} avatarText="A" />
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-                <SearchBar placeholder="Find doctor, clinic, or health issue" />
+                <SearchBar 
+                    placeholder="Find doctor, clinic, or health issue" 
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                />
                 <ServiceGrid services={services} onServicePress={handleServicePress} customColors={serviceColors} />
                 
                 {/* This should also be done with a flat list or I can just chose not to show it 
@@ -64,7 +73,7 @@ const HomePage = () => {
                 /> */}
                 <HorizontalScrollList 
                     title="Top Specialists"
-                    data={topSpecialists}
+                    data={filteredSpecialists}
                     renderItem={({ item }) => (
                         <DoctorCard 
                             initials={item.initials}

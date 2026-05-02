@@ -57,6 +57,7 @@ const AdminDashboard = () => {
     const quickActions = [
         { title: "Manage Doctors", subtitle: "View, verify & edit doctors", icon: "medkit-outline", screen: "AdminDoctors" },
         { title: "Manage Patients", subtitle: "View & remove patients", icon: "people-outline", screen: "AdminPatients" },
+        { title: "Add Hospital", subtitle: "Add new hospital to directory", icon: "business-outline", screen: "AdminAddHospital" },
     ];
 
     const StatCard = ({ title, value, icon, color, iconColor, screen }) => (

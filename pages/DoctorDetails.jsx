@@ -1,10 +1,19 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from '@expo/vector-icons';
+import { useState } from "react";
+import { ref, push, set } from "firebase/database";
+import { database, auth } from "../config/firebase";
 
 const DoctorDetailsPage = () => {
     const navigation = useNavigation();
+    const route = useRoute();
+    const { doctorId } = route.params || {};
+
+    const [selectedDate, setSelectedDate] = useState(null);
+    const [selectedTime, setSelectedTime] = useState(null);
+    const [loading, setLoading] = useState(false);
 
     // This component should have a doctor object passed to it as a prop
     const stats = [
@@ -47,17 +56,20 @@ const DoctorDetailsPage = () => {
     );
 
     const renderDateItem = ({ item }) => (
-        <TouchableOpacity style={[
-            styles.dateChip,
-            item.isActive && styles.activeDateChip
-        ]}>
+        <TouchableOpacity 
+            style={[
+                styles.dateChip,
+                selectedDate === item.date && styles.activeDateChip
+            ]}
+            onPress={() => setSelectedDate(item.date)}
+        >
             <Text style={[
                 styles.dateDay,
-                item.isActive && styles.activeDateText
+                selectedDate === item.date && styles.activeDateText
             ]}>{item.day}</Text>
             <Text style={[
                 styles.dateNumber,
-                item.isActive && styles.activeDateText
+                selectedDate === item.date && styles.activeDateText
             ]}>{item.date}</Text>
         </TouchableOpacity>
     );
@@ -66,17 +78,45 @@ const DoctorDetailsPage = () => {
         <TouchableOpacity 
             style={[
                 styles.timeChip,
-                item.isActive && styles.activeTimeChip,
+                selectedTime === item.time && styles.activeTimeChip,
                 item.isBooked && styles.bookedTimeChip
             ]}
-            disabled={item.isBooked}>
+            disabled={item.isBooked}
+            onPress={() => setSelectedTime(item.time)}
+        >
             <Text style={[
                 styles.timeText,
-                item.isActive && styles.activeTimeText,
+                selectedTime === item.time && styles.activeTimeText,
                 item.isBooked && styles.bookedTimeText
             ]}>{item.time}</Text>
         </TouchableOpacity>
     );
+
+    const handleConfirm = async () => {
+        if (!selectedDate || !selectedTime) {
+            alert("Please select a date and time");
+            return;
+        }
+        setLoading(true);
+        try {
+            const newRef = push(ref(database, "appointments"));
+            await set(newRef, {
+                patientId: auth.currentUser?.uid,
+                doctorId: doctorId || "unknown_doctor",
+                doctorName: "Dr. Sarah Ahmed", // Default fallback
+                date: `Sep ${selectedDate}, 2023`,
+                time: selectedTime,
+                status: "Upcoming",
+                createdAt: new Date().toISOString()
+            });
+            alert("Appointment booked successfully!");
+            navigation.goBack();
+        } catch (error) {
+            alert(error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -163,8 +203,14 @@ const DoctorDetailsPage = () => {
 
             {/* Bottom Action Bar */}
             <View style={styles.bottomBar}>
-                <TouchableOpacity style={styles.confirmButton}>
-                    <Text style={styles.confirmButtonText}>Confirm Schedule</Text>
+                <TouchableOpacity 
+                    style={[styles.confirmButton, (!selectedDate || !selectedTime || loading) && {opacity: 0.7}]} 
+                    onPress={handleConfirm}
+                    disabled={!selectedDate || !selectedTime || loading}
+                >
+                    <Text style={styles.confirmButtonText}>
+                        {loading ? "Booking..." : "Confirm Schedule"}
+                    </Text>
                 </TouchableOpacity>
             </View>
         </SafeAreaView>

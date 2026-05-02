@@ -3,22 +3,63 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from '@expo/vector-icons';
 import { TopBar } from "../components/TopBar";
-import { HorizontalScrollList } from "../components/HorizontalScrollList";
+import { useEffect, useState } from "react";
+import { ref, onValue } from "firebase/database";
+import { database, auth } from "../config/firebase";
 
 const DoctorDashboardPage = () => {
     const navigation = useNavigation();
 
-    const stats = [
-        { id: 1, title: "Today's Appts", value: "12", icon: "calendar-outline", color: "#E6F1FB", iconColor: "#1a40c2" },
-        { id: 2, title: "Total Patients", value: "1,240", icon: "people-outline", color: "#E6F1FB", iconColor: "#1a40c2" },
-        { id: 3, title: "Pending Prescriptions", value: "08", icon: "document-text-outline", color: "#E6F1FB", iconColor: "#1a40c2" },
-    ];
+    const [doctorName, setDoctorName] = useState("Doctor");
+    const [appointments, setAppointments] = useState([]);
+    const [patientsMap, setPatientsMap] = useState({});
+    
+    useEffect(() => {
+        const uid = auth.currentUser?.uid;
+        if (!uid) return;
+        
+        const docRef = ref(database, `doctors/${uid}`);
+        const unsubDoc = onValue(docRef, snapshot => {
+            if (snapshot.exists()) {
+                setDoctorName(snapshot.val().fullName);
+            }
+        });
 
-    const todaySchedule = [
-        { id: 1, initials: "AS", name: "Arjun Sharma", time: "09:30 AM", type: "Follow-up", typeColor: "#84f6e6", typeTextColor: "#005049" },
-        { id: 2, initials: "PK", name: "Priya Kapoor", time: "10:15 AM", type: "Consultation", typeColor: "#dde1ff", typeTextColor: "#0736ba" },
-        { id: 3, initials: "RK", name: "Rohan Khan", time: "11:00 AM", type: "Follow-up", typeColor: "#84f6e6", typeTextColor: "#005049" },
-        { id: 4, initials: "ML", name: "Meera Lynch", time: "11:45 AM", type: "Consultation", typeColor: "#dde1ff", typeTextColor: "#0736ba" },
+        const appRef = ref(database, "appointments");
+        const unsubApp = onValue(appRef, snapshot => {
+            const apps = [];
+            if (snapshot.exists()) {
+                snapshot.forEach(c => {
+                    const data = c.val();
+                    if (data.doctorId === uid) {
+                        apps.push({ id: c.key, ...data });
+                    }
+                });
+            }
+            setAppointments(apps.reverse());
+        });
+
+        const usersRef = ref(database, "users");
+        const unsubUsers = onValue(usersRef, snapshot => {
+            const pMap = {};
+            if (snapshot.exists()) {
+                snapshot.forEach(c => {
+                    pMap[c.key] = c.val();
+                });
+            }
+            setPatientsMap(pMap);
+        });
+
+        return () => { unsubDoc(); unsubApp(); unsubUsers(); };
+    }, []);
+
+    const upcomingApps = appointments.filter(a => a.status === "Upcoming");
+    const totalPatients = new Set(appointments.map(a => a.patientId)).size;
+
+    const stats = [
+        { id: 1, title: "Upcoming Appts", value: upcomingApps.length.toString(), icon: "calendar-outline", color: "#E6F1FB", iconColor: "#1a40c2" },
+        { id: 2, title: "Total Patients", value: totalPatients.toString(), icon: "people-outline", color: "#E6F1FB", iconColor: "#1a40c2" },
+        { id: 3, title: "Completed", value: appointments.filter(a => a.status === "Completed").length.toString(), icon: "checkmark-circle-outline", color: "#E6F1FB", iconColor: "#1a40c2" },
     ];
 
     const StatCard = ({ title, value, icon, color, iconColor }) => (
@@ -57,10 +98,10 @@ const DoctorDashboardPage = () => {
     return (
         <SafeAreaView style={styles.container}>
             <TopBar 
-                userName="Dr. Claire"
-                avatarText="DC"
+                userName={doctorName}
+                avatarText={doctorName.replace("Dr. ", "").substring(0, 2).toUpperCase() || "DR"}
                 greeting="Good Morning"
-                onNotificationPress={() => navigation.navigate("Notifications")}
+                onNotificationPress={() => {}}
             />
             <ScrollView 
                 style={styles.scrollView}
@@ -78,19 +119,32 @@ const DoctorDashboardPage = () => {
                 {/* Today's Schedule Section */}
                 <View style={styles.scheduleSection}>
                     <View style={styles.scheduleHeader}>
-                        <Text style={styles.sectionTitle}>Today's Schedule</Text>
-                        <TouchableOpacity onPress={() => navigation.navigate("AllSchedules")}>
+                        <Text style={styles.sectionTitle}>Upcoming Schedule</Text>
+                        <TouchableOpacity onPress={() => navigation.navigate("Schedule")}>
                             <Text style={styles.viewAllText}>View All</Text>
                         </TouchableOpacity>
                     </View>
                     <View style={styles.scheduleList}>
-                        {todaySchedule.map((item) => (
+                        {upcomingApps.length === 0 ? (
+                            <Text style={{color: "#747686", textAlign: "center", marginTop: 20}}>No upcoming appointments.</Text>
+                        ) : upcomingApps.slice(0, 5).map((item) => {
+                            const pName = patientsMap[item.patientId]?.fullName || "Unknown Patient";
+                            const pInitials = pName.substring(0, 2).toUpperCase();
+                            return (
                             <ScheduleItem 
                                 key={item.id} 
-                                item={item} 
-                                onPress={() => navigation.navigate("PatientDetails", { patientId: item.id })}
+                                item={{
+                                    initials: pInitials,
+                                    name: pName,
+                                    time: `${item.date} at ${item.time}`,
+                                    type: "Consultation",
+                                    typeColor: "#dde1ff",
+                                    typeTextColor: "#0736ba",
+                                }} 
+                                onPress={() => navigation.navigate("PatientDetails", { patientId: item.patientId })}
                             />
-                        ))}
+                            );
+                        })}
                     </View>
                 </View>
             </ScrollView>

@@ -28,6 +28,13 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminDoctorsPage from "./pages/admin/AdminDoctorsPage";
 import AdminPatientsPage from "./pages/admin/AdminPatientsPage";
 import AdminDoctorEditPage from "./pages/admin/AdminDoctorEditPage";
+import AdminAddHospitalPage from "./pages/admin/AdminAddHospitalPage";
+
+import RadiologyPage from "./pages/RadiologyPage";
+import HospitalsPage from "./pages/HospitalsPage";
+import { BloodBankPage, PrescriptionPage, CheckUpPage } from "./pages/ComingSoonPages";
+import ChatPage from "./pages/ChatPage";
+import PatientDetailsPage from "./pages/PatientDetailsPage";
 
 // Navigators
 const Stack = createNativeStackNavigator();
@@ -90,7 +97,23 @@ function DoctorTabs() {
       screenOptions={{ headerShown: false }}>
       <Tab.Screen
         name="Dashboard"
-        component={DoctorDashboardPage} />
+        component={DoctorDashboardPage}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home-outline" size={size} color={color} />
+          ),
+        }}
+      />
+        
+      <Tab.Screen
+        name="Messages"
+        component={MessagesPage}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="chatbox-outline" size={size} color={color} />
+          ),
+        }}
+      />
 
       <Tab.Screen
         name="Settings"
@@ -122,6 +145,12 @@ function PatientStack() {
       <Stack.Screen name="FindDoctors" component={FindDoctorsPage} />
       <Stack.Screen name="Emergency" component={EmergencyPage} />
       <Stack.Screen name="DoctorDetails" component={DoctorDetailsPage} />
+      <Stack.Screen name="Radiology" component={RadiologyPage} options={{ headerShown: false }} />
+      <Stack.Screen name="Hospitals" component={HospitalsPage} options={{ headerShown: false }} />
+      <Stack.Screen name="BloodBank" component={BloodBankPage} options={{ headerShown: false }} />
+      <Stack.Screen name="Prescription" component={PrescriptionPage} options={{ headerShown: false }} />
+      <Stack.Screen name="CheckUp" component={CheckUpPage} options={{ headerShown: false }} />
+      <Stack.Screen name="ChatPage" component={ChatPage} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }
@@ -131,6 +160,8 @@ function DoctorStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="DoctorTabs" component={DoctorTabs} />
+      <Stack.Screen name="ChatPage" component={ChatPage} />
+      <Stack.Screen name="PatientDetails" component={PatientDetailsPage} />
     </Stack.Navigator>
   );
 }
@@ -142,6 +173,7 @@ function AdminStack() {
       <Stack.Screen name="AdminDoctors" component={AdminDoctorsPage} />
       <Stack.Screen name="AdminPatients" component={AdminPatientsPage} />
       <Stack.Screen name="AdminDoctorEdit" component={AdminDoctorEditPage} />
+      <Stack.Screen name="AdminAddHospital" component={AdminAddHospitalPage} />
     </Stack.Navigator>
   );
 }
