@@ -141,7 +141,7 @@ const SignUpPage = () => {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
             await updateProfile(user, { displayName: fullName });
-            
+            await user.reload();
             const userData = {
                 role: userRole,
                 fullName,

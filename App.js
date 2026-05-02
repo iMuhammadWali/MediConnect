@@ -25,7 +25,6 @@ import DoctorDetailsPage from "./pages/DoctorDetails";
 
 import DoctorDashboardPage from "./pages/DoctorDashboard";
 
-// Navigators
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
