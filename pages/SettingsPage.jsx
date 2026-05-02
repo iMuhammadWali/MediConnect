@@ -11,7 +11,6 @@ const SettingsPage = ()=> {
             <Button title={"Logout"} onPress={()=>{
                 signOut(auth).then(()=>{
                     ToastAndroid.show("User signed out", ToastAndroid.SHORT)
-                    navigation.replace("Login")
                 });                                
             }}></Button>
         </SafeAreaView>

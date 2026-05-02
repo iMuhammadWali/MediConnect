@@ -7,24 +7,27 @@ import { useEffect, useState } from "react";
 import { subscribe } from "firebase/data-connect";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../config/firebase";
+import { set } from "@react-native-firebase/app/dist/module/internal/web/firebaseDatabase";
+
 // TODO: Change all the icons in this page.
-// Have to work on the navbar.
 
 const HomePage = () => {
     const navigation = useNavigation();
     const [displayName, setDisplayName] = useState(null);
 
     // This should be hardcoded.
+    const defaultBg = "#e0e3e6";
+    const defaultColor = "#00746a";
+
     const services = [
-        // Need to add appropriate background colors here as well.
-        { id: 1, name: "Emergency", icon: "warning", screen: "Emergency" },
-        { id: 2, name: "Hospital", icon: "business", screen: "Hospitals" },
-        { id: 3, name: "Blood", icon: "water", screen: "BloodBank" },
-        { id: 4, name: "Prescription", icon: "document-text", screen: "Prescriptions" },
+        { id: 1, name: "Emergency", icon: "warning", screen: "Emergency",},
+        { id: 2, name: "Hospital", icon: "business", screen: "Hospitals", },
+        { id: 3, name: "Blood", icon: "water", screen: "BloodBank", },
+        { id: 4, name: "Prescription", icon: "document-text", screen: "Prescription"},
         { id: 5, name: "Doctor", icon: "medkit", screen: "FindDoctors" },
-        { id: 6, name: "Check Up", icon: "heart", screen: "CheckUp" },
-        { id: 7, name: "Location", icon: "location", screen: "Locations" },
-        { id: 8, name: "Radiology", icon: "scan", screen: "Radiology" },
+        { id: 6, name: "Check Up", icon: "heart", screen: "CheckUp", },
+        { id: 7, name: "Location", icon: "location", screen: "Locations", },
+        { id: 8, name: "Radiology", icon: "scan", screen: "Radiology",},
     ];
 
     // This should be loaded from firebase.
@@ -39,10 +42,12 @@ const HomePage = () => {
     };
 
     useEffect(()=>{
-        const subscriber = onAuthStateChanged(auth, (user) => {
-            setDisplayName(user? user.displayName: "User");
-        }); 
-        return subscriber;
+        setDisplayName(auth.currentUser.displayName);
+
+        // Need to fetch the topSpecialists from realtime firestore.
+        // What are the details of the doctor that need to fill when they sign up
+
+        // Need to fetch the schedule here as well.
     }, []);
 
     const renderServiceItem = ({ item }) => (
@@ -51,7 +56,7 @@ const HomePage = () => {
             onPress={() => handleServicePress(item.screen)}>
             <View style={[
                 styles.serviceIcon,
-                item.isActive && styles.activeServiceIcon
+                item.name == "Emergency" ? {backgroundColor: "#ffdad6"} : {backgroundColor: "#d5eaff"}
             ]}>
                 <Ionicons 
                     name={item.icon} 
@@ -61,7 +66,6 @@ const HomePage = () => {
             </View>
             <Text style={[
                 styles.serviceName,
-                item.isActive && styles.activeServiceName
             ]}>{item.name}</Text>
         </TouchableOpacity>
     );
@@ -182,7 +186,6 @@ const HomePage = () => {
             </ScrollView>
         </SafeAreaView>
     );
-
 };
 
 
@@ -295,11 +298,12 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
     activeServiceIcon: {
-        shadowColor: "#3b5bdb",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.2,
-        shadowRadius: 16,
-        elevation: 4,
+        backgroundColor:"#3b5bdb"
+        // shadowColor: "#3b5bdb",
+        // shadowOffset: { width: 0, height: 8 },
+        // shadowOpacity: 0.2,
+        // shadowRadius: 16,
+        // elevation: 4,
     },
     serviceIconText: {
         fontSize: 28,
@@ -312,7 +316,7 @@ const styles = StyleSheet.create({
     },
     activeServiceName: {
         fontWeight: "bold",
-        color: "#3b5bdb",
+        color: "white",
     },
     scheduleSection: {
         marginTop: 24,

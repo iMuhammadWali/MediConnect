@@ -23,7 +23,7 @@ import FindDoctorsPage from "./pages/FindDoctorsPage";
 import EmergencyPage from "./pages/EmergencyPage";
 import DoctorDetailsPage from "./pages/DoctorDetails";
 import SignUpPage from "./pages/SignupPage";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./config/firebase";
 
@@ -106,7 +106,10 @@ const createRootStack = (initialRoute) => {
         screen: EmergencyPage
       },
       DoctorDetails: {
-        screen: DoctorDetailsPage
+        screen: DoctorDetailsPage,
+        options: {
+          headerShown: false
+        }
       }
     }
   })
@@ -125,6 +128,11 @@ export default function App() {
     return unsubscribe; 
   }, []);
 
+  const Navigation = useMemo(()=>{
+    const RootStack = createRootStack(user? "AppTabs" : "Onboarding");
+    return createStaticNavigation(RootStack); 
+  }, [user])
+
   if (isLoading){
     return (
       <View style={{flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "white"}}>
@@ -132,9 +140,6 @@ export default function App() {
       </View>
     )
   }
-
-  const RootStack = createRootStack(user? "AppTabs" : "Onboarding");
-  const Navigation = createStaticNavigation(RootStack); 
 
   return <Navigation/>
 }

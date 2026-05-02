@@ -36,6 +36,7 @@ const EmergencyPage = () => {
         );
     };
 
+    // This could have also been made reusable.
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView 
@@ -120,40 +121,6 @@ const EmergencyPage = () => {
                             onPress={() => handleCall("119", "Poison Control")}>
                             <Ionicons name="call" size={20} color="#ffffff" />
                         </TouchableOpacity>
-                    </View>
-                </View>
-
-                {/* Share Location Section */}
-                <TouchableOpacity 
-                    style={styles.locationCard}
-                    onPress={handleShareLocation}
-                    activeOpacity={0.7}>
-                    <View style={styles.locationIconContainer}>
-                        <Ionicons name="location" size={32} color="#ffffff" />
-                    </View>
-                    <View style={styles.locationInfo}>
-                        <Text style={styles.locationTitle}>Share My Location</Text>
-                        <Text style={styles.locationSubtitle}>
-                            Send your GPS to emergency contact
-                        </Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={24} color="rgba(255,255,255,0.6)" />
-                </TouchableOpacity>
-
-                {/* Map Snippet */}
-                <View style={styles.mapContainer}>
-                    <Image 
-                        source={{ 
-                            uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuBncJWcMi-FuIob_6WSnRkFwk1IdbN0rwXB4KfaBsdpdfywHSq2Tc30v80kMTGWBm8Cakj2bCh-VqvdhxmgkgJ9RXkh7VnzCb027gHqQ6qtDDqx4qlt_CxUOor-zDUDqsOBgfBFWYRSCMRrQa5GlJtlHVrbQM9vxZ7xnwN2dvcPeUqSbqWiA9aNvkr-A-F5jcQTNGSuoqZsrVL23nam9mkkIGPByJUBBzs_BCyw0o8p2mMoSygm55K5eS66LzCgfGQ5fweL1-f-R_Vl"
-                        }}
-                        style={styles.mapImage}
-                        blurRadius={2}
-                    />
-                    <View style={styles.mapOverlay}>
-                        <View style={styles.locationBadge}>
-                            <View style={styles.pulseDot} />
-                            <Text style={styles.locationText}>Current: Jinnah Ave, Karachi</Text>
-                        </View>
                     </View>
                 </View>
             </ScrollView>
