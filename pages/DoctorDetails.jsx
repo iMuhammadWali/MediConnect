@@ -6,11 +6,15 @@ import { Ionicons } from '@expo/vector-icons';
 const DoctorDetailsPage = () => {
     const navigation = useNavigation();
 
+    // This component should have a doctor object passed to it as a prop
     const stats = [
         { id: 1, value: "20 yrs", label: "Experience" },
         { id: 2, value: "1000+", label: "Patients" },
         { id: 3, value: "5.0", label: "Rating", hasStar: true },
     ];
+
+
+    // And all this data should be retrieved from database.
 
     const dates = [
         { id: 1, day: "Mon", date: "11", isActive: false },
@@ -19,6 +23,7 @@ const DoctorDetailsPage = () => {
         { id: 4, day: "Thu", date: "14", isActive: false },
         { id: 5, day: "Fri", date: "15", isActive: false },
     ];
+
 
     const timeSlots = [
         { id: 1, time: "09:00 AM", isActive: true, isBooked: false },
@@ -121,7 +126,8 @@ const DoctorDetailsPage = () => {
                         <Text style={styles.sectionTitle}>About Doctor</Text>
                         <Text style={styles.aboutText}>
                             Dr. Sarah Ahmed is a highly respected Cardiologist with over two decades of clinical experience. She specializes in advanced heart failure management and preventive...
-                            <Text style={styles.readMore}> Read More</Text>
+                            <Text style={styles.readMore}> Read More</Text> 
+                            {/* I should make the Read More functional. */}
                         </Text>
                     </View>
 
@@ -180,14 +186,13 @@ const styles = StyleSheet.create({
         backgroundColor: "#3b5bdb",
         borderBottomLeftRadius: 32,
         borderBottomRightRadius: 32,
-        paddingTop: 48,
+        paddingTop: 15,
         paddingBottom: 80,
         paddingHorizontal: 24,
     },
     topNav: {
         flexDirection: "row",
         justifyContent: "space-between",
-        marginBottom: 32,
     },
     iconButton: {
         width: 40,
@@ -381,14 +386,9 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(255,255,255,0.95)",
         paddingHorizontal: 24,
         paddingTop: 16,
-        paddingBottom: 32,
+        paddingBottom: 50,
         borderTopLeftRadius: 32,
         borderTopRightRadius: 32,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: -8 },
-        shadowOpacity: 0.02,
-        shadowRadius: 24,
-        elevation: 8,
     },
     confirmButton: {
         backgroundColor: "#3b5bdb",

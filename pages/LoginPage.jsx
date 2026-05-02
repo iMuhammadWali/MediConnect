@@ -1,19 +1,15 @@
-import { View, Text, Image, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, ScrollView } from "react-native";
+import { View, Text, Image, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
-import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from "react";
-
 import { auth } from "../config/firebase";
-import { 
-  onAuthStateChanged,
-  signInWithEmailAndPassword
-} from "firebase/auth";
+import { onAuthStateChanged, signInWithEmailAndPassword } from "firebase/auth";
+import { FormInput } from "../components/FormInput";
+import { SectionDivider } from "../components/SectionDivider";
 
 const LoginPage = () => {
     const navigation = useNavigation();
 
-    const [initializing, setInitializing] = useState(true);
     const [loading, setLoading] = useState(false);
     const [userRole, setUserRole] = useState("patient");
     const [email, setEmail] = useState("");
@@ -21,51 +17,45 @@ const LoginPage = () => {
     const [showPassword, setShowPassword] = useState(false);
 
     useEffect(() => {
-      const subscriber = onAuthStateChanged(auth, (u) => {
-        setInitializing(false);
-
-        if (u) {
-          navigation.replace("AppTabs");
-        }
-      });
-
-      return subscriber;
+        const subscriber = onAuthStateChanged(auth, (u) => {
+        });
+        return subscriber;
     }, []);
 
     const handleLogin = async () => {
-      if (!email || !password) {
-          Alert.alert("Error", "Please fill in all fields");
-          return;
-      }
-
-      setLoading(true);
-
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
-        Alert.alert("Success", "Logged in successfully!");
-      } catch (error) {
-        let errorMessage = "Login failed. Please try again.";
-        switch (error.code) {
-            case 'auth/invalid-email':
-                errorMessage = "Invalid email address format.";
-                break;
-            case 'auth/user-disabled':
-                errorMessage = "This account has been disabled.";
-                break;
-            case 'auth/user-not-found':
-                errorMessage = "No account found with this email.";
-                break;
-            case 'auth/wrong-password':
-                errorMessage = "Incorrect password.";
-                break;
-            default:
-                errorMessage = error.message;
+        if (!email || !password) {
+            Alert.alert("Error", "Please fill in all fields");
+            return;
         }
-        Alert.alert("Login Error", errorMessage);
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
+
+        setLoading(true);
+
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            Alert.alert("Success", "Logged in successfully!");
+        } catch (error) {
+            let errorMessage = "Login failed. Please try again.";
+            switch (error.code) {
+                case 'auth/invalid-email':
+                    errorMessage = "Invalid email address format.";
+                    break;
+                case 'auth/user-disabled':
+                    errorMessage = "This account has been disabled.";
+                    break;
+                case 'auth/user-not-found':
+                    errorMessage = "No account found with this email.";
+                    break;
+                case 'auth/wrong-password':
+                    errorMessage = "Incorrect password.";
+                    break;
+                default:
+                    errorMessage = error.message;
+            }
+            Alert.alert("Login Error", errorMessage);
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleGoogleLogin = () => {
@@ -73,16 +63,14 @@ const LoginPage = () => {
     };
 
     const handleRegister = () => {
-        navigation.navigate("Signup");
+        navigation.replace("Signup");
     };
 
     const handleForgotPassword = () => {
-        navigation.navigate("ForgotPassword");
-    };
+        // Nothing for now.
 
-    if (initializing) {
-        return null;
-    }
+        // navigation.navigate("ForgotPassword");
+    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -103,73 +91,36 @@ const LoginPage = () => {
                         {/* Login Card */}
                         <View style={styles.loginCard}>
                             <Text style={styles.welcomeTitle}>Welcome Back</Text>
-
-                            {/* Role Toggle */}
-                            <View style={styles.roleToggle}>
-                                <TouchableOpacity 
-                                    style={[styles.roleButton, userRole === 'patient' && styles.activeRoleButton]}
-                                    onPress={() => setUserRole("patient")}>
-                                    <Text style={[styles.roleButtonText, userRole === "patient" && styles.activeRoleButtonText]}> 
-                                        Patient
-                                    </Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity 
-                                    style={[styles.roleButton, userRole === 'doctor' && styles.activeRoleButton]}
-                                    onPress={() => setUserRole("doctor")}>
-                                    <Text style={[styles.roleButtonText, userRole === "doctor" && styles.activeRoleButtonText]}> 
-                                        Doctor
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-
+                            <Text style={styles.welcomeText}>Log in to manage your appointments, view test results, and connect with your healthcare team.</Text>
                             {/* Form */}
                             <View style={styles.form}>
-                                {/* Email Input */}
-                                <View style={styles.inputGroup}>
-                                    <Text style={styles.inputLabel}>Email Address</Text>
-                                    <View style={styles.inputContainer}>
-                                        <Ionicons name="mail-outline" size={18} color="#c4c5d6" style={styles.inputIcon} />
-                                        <TextInput
-                                            style={styles.input}
-                                            placeholder="name@example.com"
-                                            placeholderTextColor="#c4c5d6"
-                                            value={email}
-                                            onChangeText={setEmail}
-                                            keyboardType="email-address"
-                                            autoCapitalize="none"
-                                        />
-                                    </View>
-                                </View>
+                                <FormInput 
+                                    label="Email Address"
+                                    icon="mail-outline"
+                                    placeholder="name@example.com"
+                                    value={email}
+                                    onChangeText={setEmail}
+                                    keyboardType="email-address"
+                                    required
+                                />
 
-                                {/* Password Input */}
-                                <View style={styles.inputGroup}>
-                                    <View style={styles.passwordHeader}>
-                                        <Text style={styles.inputLabel}>Password</Text>
+                                <FormInput 
+                                    label="Password"
+                                    icon="lock-closed-outline"
+                                    placeholder="********"
+                                    value={password}
+                                    onChangeText={setPassword}
+                                    secureTextEntry={!showPassword}
+                                    showPasswordToggle
+                                    onTogglePassword={() => setShowPassword(!showPassword)}
+                                    headerRightElement={
                                         <TouchableOpacity onPress={handleForgotPassword}>
                                             <Text style={styles.forgotLink}>Forgot?</Text>
                                         </TouchableOpacity>
-                                    </View>
-                                    <View style={styles.inputContainer}>
-                                        <Ionicons name="lock-closed-outline" size={18} color="#c4c5d6" style={styles.inputIcon} />
-                                        <TextInput
-                                            style={[styles.input, { flex: 1 }]}
-                                            placeholder="********"
-                                            placeholderTextColor="#c4c5d6"
-                                            value={password}
-                                            onChangeText={setPassword}
-                                            secureTextEntry={!showPassword}
-                                        />
-                                        <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                                            <Ionicons 
-                                                name={showPassword ? "eye-outline" : "eye-off-outline"} 
-                                                size={18} 
-                                                color="#c4c5d6" 
-                                            />
-                                        </TouchableOpacity>
-                                    </View>
-                                </View>
+                                    }
+                                    required
+                                />
 
-                                {/* Login Button */}
                                 <TouchableOpacity 
                                     style={styles.loginButton} 
                                     onPress={handleLogin}
@@ -180,12 +131,7 @@ const LoginPage = () => {
                                 </TouchableOpacity>
                             </View>
 
-                            {/* Social Login Divider */}
-                            <View style={styles.dividerContainer}>
-                                <View style={styles.divider} />
-                                <Text style={styles.dividerText}>or</Text>
-                                <View style={styles.divider} />
-                            </View>
+                            <SectionDivider title="or" />
 
                             {/* Google Button */}
                             <TouchableOpacity style={styles.googleButton} onPress={handleGoogleLogin}>
@@ -259,8 +205,13 @@ const styles = StyleSheet.create({
     welcomeTitle: {
         fontSize: 20,
         fontWeight: "bold",
-        marginBottom: 20,
+        marginBottom: 8,
         color: "#191c1e",
+    },
+    welcomeText: {
+        fontSize: 14,
+        marginBottom: 20,
+        color: "#717273",
     },
     roleToggle: {
         flexDirection: "row",
@@ -295,44 +246,10 @@ const styles = StyleSheet.create({
     form: {
         gap: 14,
     },
-    inputGroup: {
-        gap: 4,
-    },
-    inputLabel: {
-        fontSize: 11,
-        fontWeight: "600",
-        color: "#444654",
-        textTransform: "uppercase",
-        letterSpacing: 0.5,
-        marginLeft: 4,
-    },
-    passwordHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "baseline",
-        paddingHorizontal: 4,
-    },
     forgotLink: {
         fontSize: 11,
         fontWeight: "500",
         color: "#1a40c2",
-    },
-    inputContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: "#e6e8eb",
-        borderRadius: 14,
-        paddingHorizontal: 14,
-        height: 46,
-    },
-    inputIcon: {
-        marginRight: 10,
-    },
-    input: {
-        flex: 1,
-        fontSize: 13,
-        color: "#191c1e",
-        paddingVertical: 10,
     },
     loginButton: {
         backgroundColor: "#1a40c2",
@@ -350,22 +267,6 @@ const styles = StyleSheet.create({
         color: "#ffffff",
         fontSize: 14,
         fontWeight: "600",
-    },
-    dividerContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginVertical: 24,
-    },
-    divider: {
-        flex: 1,
-        height: 1,
-        backgroundColor: "#e0e3e6",
-    },
-    dividerText: {
-        fontSize: 11,
-        fontWeight: "500",
-        color: "#c4c5d6",
-        marginHorizontal: 14,
     },
     googleButton: {
         flexDirection: "row",

@@ -1,245 +1,316 @@
-import { View, Text, Image, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, ScrollView } from "react-native";
+// pages/SignupPage.js (Updated for multiple specializations)
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
-import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useState } from "react";
-import { auth } from "../config/firebase";
-
-import { 
-  createUserWithEmailAndPassword,
-  updateProfile
-} from "firebase/auth";
+import { useState } from "react";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { ref, set } from "firebase/database";
+import { auth, database } from "../config/firebase";
+import { FormInput } from "../components/FormInput";
+import { FormDropdown } from "../components/FormDropdown";
+import { DayPicker } from "../components/DayPicker";
+import { SectionDivider } from "../components/SectionDivider";
 
 const SignUpPage = () => {
     const navigation = useNavigation();
     const [loading, setLoading] = useState(false);
-
     const [userRole, setUserRole] = useState("patient");
+    
+    // Common fields
     const [fullName, setFullName] = useState("");
     const [email, setEmail] = useState("");
+    const [phone, setPhone] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
-
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    
+    // Doctor-specific fields
+    const [selectedSpecializations, setSelectedSpecializations] = useState([]);
+    const [selectedLanguages, setSelectedLanguages] = useState([]);
+    const [medicalLicense, setMedicalLicense] = useState("");
+    const [hospitalAffiliation, setHospitalAffiliation] = useState("");
+    const [experience, setExperience] = useState("");
+    const [consultationFee, setConsultationFee] = useState("");
+    const [bio, setBio] = useState("");
+    const [clinicAddress, setClinicAddress] = useState("");
+    const [clinicCity, setClinicCity] = useState("");
+    const [clinicPhone, setClinicPhone] = useState("");
+    const [workingDays, setWorkingDays] = useState([]);
+    const [startTime, setStartTime] = useState("");
+    const [endTime, setEndTime] = useState("");
+    const [education, setEducation] = useState("");
+    const [services, setServices] = useState("");
 
-    const handleSignUp = async () => {
-        if (!fullName || !email || !password || !confirmPassword) {
-            // TODO: Give meaninful AHCI errors if time.
-            Alert.alert("Error", "Please fill in all fields");
-            return;
+    // Dropdown options
+    const specializations = [
+        "Cardiologist", "Interventional Cardiologist", "Pediatric Cardiologist",
+        "Neurologist", "Neurosurgeon", "Pediatric Neurologist",
+        "Pediatrician", "Neonatologist", "Adolescent Medicine Specialist",
+        "Dermatologist", "Cosmetic Dermatologist", "Pediatric Dermatologist",
+        "Orthopedic Surgeon", "Pediatric Orthopedic Surgeon", "Sports Medicine Specialist",
+        "Gynecologist", "Obstetrician", "Reproductive Endocrinologist",
+        "Ophthalmologist", "Pediatric Ophthalmologist", "Retina Specialist",
+        "ENT Specialist", "Otologist", "Rhinologist", "Laryngologist",
+        "Psychiatrist", "Child Psychiatrist", "Forensic Psychiatrist",
+        "Radiologist", "Interventional Radiologist", "Pediatric Radiologist",
+        "General Physician", "Internal Medicine Specialist", "Family Medicine Specialist",
+        "Dentist", "Orthodontist", "Oral Surgeon", "Pediatric Dentist",
+        "Urologist", "Pediatric Urologist", "Urogynecologist",
+        "Gastroenterologist", "Pediatric Gastroenterologist", "Hepatologist",
+        "Endocrinologist", "Pediatric Endocrinologist", "Diabetologist",
+        "Nephrologist", "Pediatric Nephrologist",
+        "Pulmonologist", "Pediatric Pulmonologist",
+        "Rheumatologist", "Pediatric Rheumatologist",
+        "Oncologist", "Pediatric Oncologist", "Radiation Oncologist",
+        "Anesthesiologist", "Pain Management Specialist", "Pediatric Anesthesiologist",
+        "Emergency Medicine Specialist", "Critical Care Specialist",
+        "Infectious Disease Specialist", "Immunologist", "Allergist",
+        "Hematologist", "Pathologist", "Geneticist"
+    ];
+
+    const languagesList = [
+        "English", "Urdu", "Hindi", "Arabic", "Punjabi", "Pashto",
+        "Sindhi", "Balochi", "French", "German", "Chinese", "Turkish", 
+        "Persian", "Spanish", "Russian", "Japanese", "Korean", "Italian",
+        "Portuguese", "Dutch", "Swedish", "Norwegian", "Danish", "Finnish",
+        "Greek", "Polish", "Czech", "Hungarian", "Romanian", "Thai",
+        "Vietnamese", "Malay", "Indonesian", "Filipino", "Bengali", "Nepali"
+    ];
+
+    const toggleSpecialization = (specialization) => {
+        setSelectedSpecializations(prev => 
+            prev.includes(specialization) 
+                ? prev.filter(s => s !== specialization) 
+                : [...prev, specialization]
+        );
+    };
+
+    const toggleLanguage = (language) => {
+        setSelectedLanguages(prev => 
+            prev.includes(language) 
+                ? prev.filter(l => l !== language) 
+                : [...prev, language]
+        );
+    };
+
+    const toggleWorkingDay = (day) => {
+        setWorkingDays(prev => 
+            prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
+        );
+    };
+
+    const validateForm = () => {
+        if (!fullName || !email || !phone || !password || !confirmPassword) {
+            Alert.alert("Error", "Please fill in all required fields");
+            return false;
         }
-
         if (password !== confirmPassword) {
             Alert.alert("Error", "Passwords do not match");
-            return;
+            return false;
         }
-
         if (password.length < 6) {
             Alert.alert("Error", "Password must be at least 6 characters");
-            return;
+            return false;
         }
+        if (userRole === "doctor") {
+            if (selectedSpecializations.length === 0 || !medicalLicense || !hospitalAffiliation || !experience || !consultationFee) {
+                Alert.alert("Error", "Please fill in all doctor information");
+                return false;
+            }
+            const expNum = parseInt(experience);
+            if (isNaN(expNum) || expNum < 0) {
+                Alert.alert("Error", "Please enter valid years of experience");
+                return false;
+            }
+            const feeNum = parseInt(consultationFee);
+            if (isNaN(feeNum) || feeNum < 0) {
+                Alert.alert("Error", "Please enter valid consultation fee");
+                return false;
+            }
+        }
+        return true;
+    };
+
+    // TODO: Understand this and make this work
+    const handleSignUp = async () => {
+        if (!validateForm()) return;
 
         setLoading(true);
-
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+            await updateProfile(user, { displayName: fullName });
             
-            // Update user profile with full name
-            await updateProfile(userCredential.user, {
-                displayName: fullName
-            });
-
-            Alert.alert("Success", "Account created successfully!");
+            const userData = {
+                uid: user.uid,
+                role: userRole,
+                fullName,
+                email,
+                phone,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                ...(userRole === "doctor" ? {
+                    doctorInfo: {
+                        specializations: selectedSpecializations,
+                        primarySpecialization: selectedSpecializations[0] || "",
+                        languages: selectedLanguages,
+                        medicalLicense,
+                        hospitalAffiliation,
+                        experience: parseInt(experience),
+                        consultationFee: parseInt(consultationFee),
+                        bio,
+                        clinicAddress,
+                        clinicCity,
+                        clinicPhone,
+                        workingDays,
+                        startTime: startTime || "09:00 AM",
+                        endTime: endTime || "05:00 PM",
+                        education,
+                        services,
+                        // Show to patient only when isVerified equals true.
+                        isVerified: true,
+                        rating: 0,
+                        totalRatings: 0,
+                        patientsCount: 0
+                    }
+                } : {})
+            };
+            const userRef = ref(database, `users/${user.uid}`);
+            await set(userRef, userData);
+            
+            Alert.alert("Success", userRole === "doctor" 
+                ? "Doctor account created! Pending admin verification." 
+                : "Account created successfully!");
             navigation.replace("Login");
+            
         } catch (error) {
-            let errorMessage = "Sign up failed. Please try again.";
-            switch (error.code) {
-                case 'auth/email-already-in-use':
-                    errorMessage = "An account already exists with this email.";
-                    break;
-                case 'auth/invalid-email':
-                    errorMessage = "Invalid email address format.";
-                    break;
-                case 'auth/weak-password':
-                    errorMessage = "Password is too weak. Use at least 6 characters.";
-                    break;
-                default:
-                    errorMessage = error.message;
-            }
-            Alert.alert("Sign Up Error", errorMessage);
-            console.error(error);
+            const errorMessages = {
+                'auth/email-already-in-use': "An account already exists with this email.",
+                'auth/invalid-email': "Invalid email address format.",
+                'auth/weak-password': "Password is too weak. Use at least 6 characters."
+            };
+            Alert.alert("Sign Up Error", errorMessages[error.code] || error.message);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleGoogleSignUp = () => {
-        Alert.alert("Google Sign Up", "Google sign-in integration would go here");
-    };
-
-    const handleLogin = () => {
-        navigation.replace("Login");
-    };
-
     return (
         <SafeAreaView style={styles.container}>
-            <KeyboardAvoidingView 
-                style={styles.keyboardView}
-                behavior={Platform.OS === "ios" ? "padding" : "height"}>
-                <ScrollView 
-                    contentContainerStyle={styles.scrollContent}
-                    keyboardShouldPersistTaps="handled"
-                    showsVerticalScrollIndicator={false}>
-                    
+            <KeyboardAvoidingView style={styles.keyboardView} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     <View style={styles.contentContainer}>
-                        {/* Title */}
                         <View style={styles.logoContainer}>
                             <Text style={styles.logoText}>MediConnect</Text>
                         </View>
 
-                        {/* Sign Up Card */}
                         <View style={styles.signUpCard}>
                             <Text style={styles.welcomeTitle}>Create Account</Text>
 
                             {/* Role Toggle */}
                             <View style={styles.roleToggle}>
-                                <TouchableOpacity 
-                                    style={[styles.roleButton, userRole === 'patient' && styles.activeRoleButton]}
-                                    onPress={() => setUserRole("patient")}>
-                                    <Text style={[styles.roleButtonText, userRole === "patient" && styles.activeRoleButtonText]}> 
-                                        Patient
-                                    </Text>
+                                <TouchableOpacity style={[styles.roleButton, userRole === 'patient' && styles.activeRoleButton]} onPress={() => setUserRole("patient")}>
+                                    <Text style={[styles.roleButtonText, userRole === "patient" && styles.activeRoleButtonText]}>Patient</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity 
-                                    style={[styles.roleButton, userRole === 'doctor' && styles.activeRoleButton]}
-                                    onPress={() => setUserRole("doctor")}>
-                                    <Text style={[styles.roleButtonText, userRole === "doctor" && styles.activeRoleButtonText]}> 
-                                        Doctor
-                                    </Text>
+                                <TouchableOpacity style={[styles.roleButton, userRole === 'doctor' && styles.activeRoleButton]} onPress={() => setUserRole("doctor")}>
+                                    <Text style={[styles.roleButtonText, userRole === "doctor" && styles.activeRoleButtonText]}>Doctor</Text>
                                 </TouchableOpacity>
                             </View>
 
-                            {/* Form */}
-                            <View style={styles.form}>
-                                {/* Full Name Input */}
-                                <View style={styles.inputGroup}>
-                                    <Text style={styles.inputLabel}>Full Name</Text>
-                                    <View style={styles.inputContainer}>
-                                        <Ionicons name="person-outline" size={18} color="#c4c5d6" style={styles.inputIcon} />
-                                        <TextInput
-                                            style={styles.input}
-                                            placeholder="Muhammad Wali"
-                                            placeholderTextColor="#c4c5d6"
-                                            value={fullName}
-                                            onChangeText={setFullName}
-                                            autoCapitalize="words"
-                                        />
+                            {/* Common Fields */}
+                            <FormInput label="Full Name" icon="person-outline" placeholder="Full Name" value={fullName} onChangeText={setFullName} required />
+                            <FormInput label="Email" icon="mail-outline" placeholder="email@example.com" value={email} onChangeText={setEmail} keyboardType="email-address" required />
+                            <FormInput label="Phone Number" icon="call-outline" placeholder="+92 XXX XXXXXXX" value={phone} onChangeText={setPhone} keyboardType="phone-pad" required />
+
+                            {/* Doctor Fields */}
+                            {userRole === "doctor" && (
+                                <>
+                                    <SectionDivider title="Professional Information" />
+                                    
+                                    {/* Multiple Specializations Dropdown */}
+                                    <FormDropdown 
+                                        label="Specializations" 
+                                        icon="medkit-outline" 
+                                        placeholder="Select Specializations (can select multiple)" 
+                                        multiple 
+                                        selectedItems={selectedSpecializations} 
+                                        onToggleItem={toggleSpecialization} 
+                                        options={specializations} 
+                                        required 
+                                    />
+                                    
+                                    {/* Display selected specializations count */}
+                                    {selectedSpecializations.length > 0 && (
+                                        <View style={styles.selectedCountContainer}>
+                                            <Text style={styles.selectedCountText}>
+                                                {selectedSpecializations.length} specialization(s) selected
+                                            </Text>
+                                        </View>
+                                    )}
+                                    
+                                    <FormDropdown 
+                                        label="Languages Spoken" 
+                                        icon="language-outline" 
+                                        placeholder="Select Languages (can select multiple)" 
+                                        multiple 
+                                        selectedItems={selectedLanguages} 
+                                        onToggleItem={toggleLanguage} 
+                                        options={languagesList} 
+                                        required 
+                                    />
+                                    
+                                    <FormInput label="Medical License Number" icon="card-outline" placeholder="License Number" value={medicalLicense} onChangeText={setMedicalLicense} required />
+                                    <FormInput label="Hospital/Clinic Affiliation" icon="business-outline" placeholder="Hospital Name" value={hospitalAffiliation} onChangeText={setHospitalAffiliation} required />
+                                    
+                                    <View style={styles.rowContainer}>
+                                        <View style={{ flex: 1 }}>
+                                            <FormInput label="Experience (write in years)" icon="time-outline" placeholder="10" value={experience} onChangeText={setExperience} keyboardType="numeric" required />
+                                        </View>
+                                        <View style={{ flex: 1 }}>
+                                            <FormInput label="Consultation Fee (PKR)" icon="cash-outline" placeholder="2000" value={consultationFee} onChangeText={setConsultationFee} keyboardType="numeric" required />
+                                        </View>
                                     </View>
-                                </View>
-
-                                {/* Email Input */}
-                                <View style={styles.inputGroup}>
-                                    <Text style={styles.inputLabel}>Email Address</Text>
-                                    <View style={styles.inputContainer}>
-                                        <Ionicons name="mail-outline" size={18} color="#c4c5d6" style={styles.inputIcon} />
-                                        <TextInput
-                                            style={styles.input}
-                                            placeholder="name@example.com"
-                                            placeholderTextColor="#c4c5d6"
-                                            value={email}
-                                            onChangeText={setEmail}
-                                            keyboardType="email-address"
-                                            autoCapitalize="none"
-                                        />
+                                    
+                                    <FormInput label="Education" icon="school-outline" placeholder="MBBS, FCPS, etc." value={education} onChangeText={setEducation} />
+                                    <FormInput label="Clinic Address" icon="location-outline" placeholder="Full clinic address" value={clinicAddress} onChangeText={setClinicAddress} multiline />
+                                    
+                                    <View style={styles.rowContainer}>
+                                        <View style={{ flex: 1 }}>
+                                            <FormInput label="City" icon="location-outline" placeholder="Karachi" value={clinicCity} onChangeText={setClinicCity} />
+                                        </View>
+                                        <View style={{ flex: 1 }}>
+                                            <FormInput label="Clinic Phone" icon="call-outline" placeholder="Clinic phone" value={clinicPhone} onChangeText={setClinicPhone} keyboardType="phone-pad" />
+                                        </View>
                                     </View>
-                                </View>
-
-                                {/* Password Input */}
-                                <View style={styles.inputGroup}>
-                                    <Text style={styles.inputLabel}>Password</Text>
-                                    <View style={styles.inputContainer}>
-                                        <Ionicons name="lock-closed-outline" size={18} color="#c4c5d6" style={styles.inputIcon} />
-                                        <TextInput
-                                            style={[styles.input, { flex: 1 }]}
-                                            placeholder="********"
-                                            placeholderTextColor="#c4c5d6"
-                                            value={password}
-                                            onChangeText={setPassword}
-                                            secureTextEntry={!showPassword}
-                                        />
-                                        <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                                            <Ionicons 
-                                                name={showPassword ? "eye-outline" : "eye-off-outline"} 
-                                                size={18} 
-                                                color="#c4c5d6" 
-                                            />
-                                        </TouchableOpacity>
+                                    
+                                    <DayPicker selectedDays={workingDays} onToggleDay={toggleWorkingDay} label="Working Days" />
+                                    
+                                    <View style={styles.rowContainer}>
+                                        <View style={{ flex: 1 }}>
+                                            <FormInput label="Start Time" icon="time-outline" placeholder="09:00 AM" value={startTime} onChangeText={setStartTime} />
+                                        </View>
+                                        <View style={{ flex: 1 }}>
+                                            <FormInput label="End Time" icon="time-outline" placeholder="05:00 PM" value={endTime} onChangeText={setEndTime} />
+                                        </View>
                                     </View>
-                                </View>
+                                    
+                                    <FormInput label="Services Offered" icon="list-outline" placeholder="Heart Checkup, ECG, Surgery" value={services} onChangeText={setServices} multiline />
+                                    <FormInput label="Bio / Introduction" icon="document-text-outline" placeholder="Brief introduction about yourself" value={bio} onChangeText={setBio} multiline />
+                                </>
+                            )}
 
-                                {/* Confirm Password Input */}
-                                <View style={styles.inputGroup}>
-                                    <Text style={styles.inputLabel}>Confirm Password</Text>
-                                    <View style={styles.inputContainer}>
-                                        <Ionicons name="lock-closed-outline" size={18} color="#c4c5d6" style={styles.inputIcon} />
-                                        <TextInput
-                                            style={[styles.input, { flex: 1 }]}
-                                            placeholder="********"
-                                            placeholderTextColor="#c4c5d6"
-                                            value={confirmPassword}
-                                            onChangeText={setConfirmPassword}
-                                            secureTextEntry={!showConfirmPassword}
-                                        />
-                                        <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
-                                            <Ionicons 
-                                                name={showConfirmPassword ? "eye-outline" : "eye-off-outline"} 
-                                                size={18} 
-                                                color="#c4c5d6" 
-                                            />
-                                        </TouchableOpacity>
-                                    </View>
-                                </View>
+                            {/* Password Fields */}
+                            <FormInput label="Password" icon="lock-closed-outline" placeholder="********" value={password} onChangeText={setPassword} secureTextEntry={!showPassword} showPasswordToggle onTogglePassword={() => setShowPassword(!showPassword)} required />
+                            <FormInput label="Confirm Password" icon="lock-closed-outline" placeholder="********" value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry={!showConfirmPassword} showPasswordToggle onTogglePassword={() => setShowConfirmPassword(!showConfirmPassword)} required />
 
-                                {/* Sign Up Button */}
-                                <TouchableOpacity 
-                                    style={styles.signUpButton} 
-                                    onPress={handleSignUp}
-                                    disabled={loading}>
-                                    <Text style={styles.signUpButtonText}>
-                                        {loading ? "Creating Account..." : "Sign Up"}
-                                    </Text>
-                                    {/* Should hide this button or add a loading circle*/}
-                                </TouchableOpacity>
-                            </View>
-
-                            {/* Social Login Divider */}
-                            <View style={styles.dividerContainer}>
-                                <View style={styles.divider} />
-                                <Text style={styles.dividerText}>or</Text>
-                                <View style={styles.divider} />
-                            </View>
-
-                            {/* Google Button */}
-                            <TouchableOpacity style={styles.googleButton} onPress={handleGoogleSignUp}>
-                                <View style={styles.googleIconContainer}>
-                                    <Image 
-                                        source={{ uri: 'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png' }}
-                                        style={{ width: 18, height: 18 }}
-                                    />                            
-                                </View>
-                                <Text style={styles.googleButtonText}>Continue with Google</Text>
+                            <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp} disabled={loading}>
+                                <Text style={styles.signUpButtonText}>{loading ? "Creating Account..." : "Sign Up"}</Text>
                             </TouchableOpacity>
-                        </View>
 
-                        {/* Login Link */}
-                        <View style={styles.loginContainer}>
-                            <Text style={styles.loginText}>
-                                Already have an account?{" "}
-                                <Text style={styles.loginLink} onPress={handleLogin}>
-                                    Log in
-                                </Text>
-                            </Text>
+                            <View style={styles.loginContainer}>
+                                <Text style={styles.loginText}>Already have an account? <Text style={styles.loginLink} onPress={() => navigation.replace("Login")}>Log in</Text></Text>
+                            </View>
                         </View>
                     </View>
                 </ScrollView>
@@ -249,179 +320,27 @@ const SignUpPage = () => {
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#f7f9fc",
-    },
-    keyboardView: {
-        flex: 1,
-    },
-    scrollContent: {
-        flexGrow: 1,
-    },
-    contentContainer: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        paddingHorizontal: 20,
-        paddingVertical: 20,
-    },
-    logoContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 8,
-        marginBottom: 32,
-    },
-    logoText: {
-        fontSize: 24,
-        fontWeight: "bold",
-        letterSpacing: -0.5,
-        color: "#1a40c2",
-    },
-    signUpCard: {
-        backgroundColor: "#ffffff",
-        borderRadius: 24,
-        padding: 24,
-        width: "100%",
-        shadowColor: "#1a40c2",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
-    },
-    welcomeTitle: {
-        fontSize: 20,
-        fontWeight: "bold",
-        marginBottom: 20,
-        color: "#191c1e",
-    },
-    roleToggle: {
-        flexDirection: "row",
-        backgroundColor: "#eceef1",
-        borderRadius: 9999,
-        padding: 4,
-        marginBottom: 24,
-    },
-    roleButton: {
-        flex: 1,
-        paddingVertical: 8,
-        borderRadius: 9999,
-        alignItems: "center",
-    },
-    activeRoleButton: {
-        backgroundColor: "#ffffff",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 1,
-    },
-    roleButtonText: {
-        fontSize: 13,
-        fontWeight: "500",
-        color: "#444654",
-    },
-    activeRoleButtonText: {
-        color: "#1a40c2",
-        fontWeight: "600",
-    },
-    form: {
-        gap: 14,
-    },
-    inputGroup: {
-        gap: 4,
-    },
-    inputLabel: {
-        fontSize: 11,
-        fontWeight: "600",
-        color: "#444654",
-        textTransform: "uppercase",
-        letterSpacing: 0.5,
-        marginLeft: 4,
-    },
-    inputContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: "#e6e8eb",
-        borderRadius: 14,
-        paddingHorizontal: 14,
-        height: 46,
-    },
-    inputIcon: {
-        marginRight: 10,
-    },
-    input: {
-        flex: 1,
-        fontSize: 13,
-        color: "#191c1e",
-        paddingVertical: 10,
-    },
-    signUpButton: {
-        backgroundColor: "#1a40c2",
-        borderRadius: 9999,
-        paddingVertical: 12,
-        alignItems: "center",
-        marginTop: 8,
-        shadowColor: "#1a40c2",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-        elevation: 3,
-    },
-    signUpButtonText: {
-        color: "#ffffff",
-        fontSize: 14,
-        fontWeight: "600",
-    },
-    dividerContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginVertical: 24,
-    },
-    divider: {
-        flex: 1,
-        height: 1,
-        backgroundColor: "#e0e3e6",
-    },
-    dividerText: {
-        fontSize: 11,
-        fontWeight: "500",
-        color: "#c4c5d6",
-        marginHorizontal: 14,
-    },
-    googleButton: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 10,
-        backgroundColor: "#ffffff",
-        borderWidth: 1,
-        borderColor: "rgba(196, 197, 214, 0.3)",
-        borderRadius: 9999,
-        paddingVertical: 12,
-    },
-    googleIconContainer: {
-        width: 18,
-        height: 18,
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    googleButtonText: {
-        fontSize: 13,
-        fontWeight: "500",
-        color: "#191c1e",
-    },
-    loginContainer: {
-        marginTop: 24,
-    },
-    loginText: {
-        fontSize: 13,
-        color: "#444654",
-    },
-    loginLink: {
-        fontWeight: "600",
-        color: "#1a40c2",
-    },
+    container: { flex: 1, backgroundColor: "#f7f9fc" },
+    keyboardView: { flex: 1 },
+    scrollContent: { flexGrow: 1 },
+    contentContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 20, paddingVertical: 20 },
+    logoContainer: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 20 },
+    logoText: { fontSize: 24, fontWeight: "bold", letterSpacing: -0.5, color: "#1a40c2" },
+    signUpCard: { backgroundColor: "#ffffff", borderRadius: 24, padding: 20, width: "100%", shadowColor: "#1a40c2", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+    welcomeTitle: { fontSize: 20, fontWeight: "bold", marginBottom: 16, color: "#191c1e" },
+    roleToggle: { flexDirection: "row", backgroundColor: "#eceef1", borderRadius: 9999, padding: 4, marginBottom: 20 },
+    roleButton: { flex: 1, paddingVertical: 8, borderRadius: 9999, alignItems: "center" },
+    activeRoleButton: { backgroundColor: "#ffffff", elevation: 1 },
+    roleButtonText: { fontSize: 13, fontWeight: "500", color: "#444654" },
+    activeRoleButtonText: { color: "#1a40c2", fontWeight: "600" },
+    rowContainer: { flexDirection: "row", gap: 12 },
+    selectedCountContainer: { marginTop: -8, marginBottom: 8, paddingHorizontal: 4 },
+    selectedCountText: { fontSize: 11, color: "#1a40c2", fontWeight: "500" },
+    signUpButton: { backgroundColor: "#1a40c2", borderRadius: 9999, paddingVertical: 12, alignItems: "center", marginTop: 8, elevation: 3 },
+    signUpButtonText: { color: "#ffffff", fontSize: 14, fontWeight: "600" },
+    loginContainer: { marginTop: 20, alignItems: "center" },
+    loginText: { fontSize: 13, color: "#444654" },
+    loginLink: { fontWeight: "600", color: "#1a40c2" }
 });
 
 export default SignUpPage;
