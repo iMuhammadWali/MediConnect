@@ -8,7 +8,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, database } from "./config/firebase";
-import { get, ref } from "firebase/database";
+import { onValue, ref } from "firebase/database";
 
 import OnboardingPage from "./pages/OnboardingPage";
 import LoginPage from "./pages/LoginPage";
@@ -24,6 +24,10 @@ import EmergencyPage from "./pages/EmergencyPage";
 import DoctorDetailsPage from "./pages/DoctorDetails";
 
 import DoctorDashboardPage from "./pages/DoctorDashboard";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminDoctorsPage from "./pages/admin/AdminDoctorsPage";
+import AdminPatientsPage from "./pages/admin/AdminPatientsPage";
+import AdminDoctorEditPage from "./pages/admin/AdminDoctorEditPage";
 
 // Navigators
 const Stack = createNativeStackNavigator();
@@ -80,14 +84,14 @@ function PatientTabs() {
   );
 }
 
-function DoctorTabs(){
+function DoctorTabs() {
   return (
-    <Tab.Navigator 
-      screenOptions={{headerShown: false}}>
-      <Tab.Screen 
-        name="Dashboard" 
-        component={DoctorDashboardPage}/>    
-    
+    <Tab.Navigator
+      screenOptions={{ headerShown: false }}>
+      <Tab.Screen
+        name="Dashboard"
+        component={DoctorDashboardPage} />
+
       <Tab.Screen
         name="Settings"
         component={SettingsPage}
@@ -95,7 +99,7 @@ function DoctorTabs(){
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="settings-outline" size={size} color={color} />
           ),
-        }}/>
+        }} />
 
     </Tab.Navigator>
   )
@@ -114,7 +118,7 @@ function AuthStack() {
 function PatientStack() {
   return (
     <Stack.Navigator screenOptions={{}}>
-      <Stack.Screen name="PatientTabs" component={PatientTabs} options={{headerShown: false}} />
+      <Stack.Screen name="PatientTabs" component={PatientTabs} options={{ headerShown: false }} />
       <Stack.Screen name="FindDoctors" component={FindDoctorsPage} />
       <Stack.Screen name="Emergency" component={EmergencyPage} />
       <Stack.Screen name="DoctorDetails" component={DoctorDetailsPage} />
@@ -131,33 +135,62 @@ function DoctorStack() {
   );
 }
 
+function AdminStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
+      <Stack.Screen name="AdminDoctors" component={AdminDoctorsPage} />
+      <Stack.Screen name="AdminPatients" component={AdminPatientsPage} />
+      <Stack.Screen name="AdminDoctorEdit" component={AdminDoctorEditPage} />
+    </Stack.Navigator>
+  );
+}
+
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      try {
-        
-        if (firebaseUser) {
-          const snapshot = await get(ref(database, `users/${firebaseUser.uid}`));
-          const fetchedRole = snapshot.exists() ? snapshot.val().role : null;
-          
-          setRole(fetchedRole)
-          setUser(firebaseUser); 
-        } else {
-          setRole(null);
-          setUser(null);
-        }
-      } catch (error) {
-        console.error("Error fetching role:", error);
+    let roleUnsubscribe = null;
+
+    const authUnsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      // Clean up previous role listener when auth state changes
+      if (roleUnsubscribe) {
+        roleUnsubscribe();
+        roleUnsubscribe = null;
+      }
+
+      if (firebaseUser) {
+        setUser(firebaseUser);
+        // Use onValue (real-time listener) instead of get() so that if
+        // onAuthStateChanged fires before the DB write completes (race
+        // condition during signup), the role still updates once the
+        // data is written.
+        roleUnsubscribe = onValue(
+          ref(database, `users/${firebaseUser.uid}`),
+          (snapshot) => {
+            const fetchedRole = snapshot.exists() ? snapshot.val().role : null;
+            setRole(fetchedRole);
+            setIsLoading(false);
+          },
+          (error) => {
+            console.error("Error fetching role:", error);
+            setRole(null);
+            setIsLoading(false);
+          }
+        );
+      } else {
         setRole(null);
-      } finally {
+        setUser(null);
         setIsLoading(false);
       }
     });
-    return unsubscribe;
+
+    return () => {
+      authUnsubscribe();
+      if (roleUnsubscribe) roleUnsubscribe();
+    };
   }, []);
 
   if (isLoading) {
@@ -172,10 +205,12 @@ export default function App() {
     <NavigationContainer>
       {!user ? (
         <AuthStack />
-      ) : role === "doctor" ? (
-        <DoctorStack />
-      ) : (
+      ) : role === "patient" ? (
         <PatientStack />
+      ) : role === "admin" ? (
+        <AdminStack />
+      ) : (
+        <DoctorStack />
       )}
     </NavigationContainer>
   );
