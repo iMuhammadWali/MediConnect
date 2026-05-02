@@ -8,7 +8,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, database } from "./config/firebase";
-import { get, ref } from "firebase/database";
+import { get, ref, onValue } from "firebase/database";
 
 import OnboardingPage from "./pages/OnboardingPage";
 import LoginPage from "./pages/LoginPage";
@@ -137,27 +137,41 @@ export default function App() {
   const [role, setRole] = useState(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      try {
-        
-        if (firebaseUser) {
-          const snapshot = await get(ref(database, `users/${firebaseUser.uid}`));
-          const fetchedRole = snapshot.exists() ? snapshot.val().role : null;
-          
-          setRole(fetchedRole)
-          setUser(firebaseUser); 
-        } else {
-          setRole(null);
-          setUser(null);
-        }
-      } catch (error) {
-        console.error("Error fetching role:", error);
+    let roleUnsubscribe = null;
+
+    const authUnsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      // Clean up previous role listener when auth state changes because new one will be attached.
+      if (roleUnsubscribe) {
+        roleUnsubscribe();
+        roleUnsubscribe = null;
+      }
+
+      if (firebaseUser) {
+        setUser(firebaseUser);
+        roleUnsubscribe = onValue(
+          ref(database, `users/${firebaseUser.uid}`),
+          (snapshot) => {
+            const fetchedRole = snapshot.exists() ? snapshot.val().role : null;
+            setRole(fetchedRole);
+            setIsLoading(false);
+          },
+          (error) => {
+            console.error("Error fetching role:", error);
+            setRole(null);
+            setIsLoading(false);
+          }
+        );
+      } else {
         setRole(null);
-      } finally {
+        setUser(null);
         setIsLoading(false);
       }
     });
-    return unsubscribe;
+
+    return () => {
+      authUnsubscribe();
+      if (roleUnsubscribe) roleUnsubscribe();
+    };
   }, []);
 
   if (isLoading) {
