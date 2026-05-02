@@ -56,17 +56,17 @@ const DoctorDashboardPage = () => {
 
     return (
         <SafeAreaView style={styles.container}>
+            <TopBar 
+                userName="Dr. Claire"
+                avatarText="DC"
+                greeting="Good Morning"
+                onNotificationPress={() => navigation.navigate("Notifications")}
+            />
             <ScrollView 
                 style={styles.scrollView}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}>
-                
-                <TopBar 
-                    userName="Dr. Claire"
-                    avatarText="DC"
-                    greeting="Good Morning"
-                    onNotificationPress={() => navigation.navigate("Notifications")}
-                />
+            
 
                 {/* Stats Section */}
                 <View style={styles.statsSection}>

@@ -29,19 +29,18 @@ import DoctorDashboardPage from "./pages/DoctorDashboard";
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-
-// -------------------- TABS (PATIENT) --------------------
 function PatientTabs() {
   return (
     <Tab.Navigator
       screenOptions={{
-        headerShown: false,
+        // headerShown: false,
       }}
     >
       <Tab.Screen
         name="Home"
         component={HomePage}
         options={{
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home-outline" size={size} color={color} />
           ),
@@ -91,7 +90,12 @@ function DoctorTabs(){
     
       <Tab.Screen
         name="Settings"
-        component={SettingsPage}/>
+        component={SettingsPage}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="settings-outline" size={size} color={color} />
+          ),
+        }}/>
 
     </Tab.Navigator>
   )
@@ -109,8 +113,8 @@ function AuthStack() {
 
 function PatientStack() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="PatientTabs" component={PatientTabs} />
+    <Stack.Navigator screenOptions={{}}>
+      <Stack.Screen name="PatientTabs" component={PatientTabs} options={{headerShown: false}} />
       <Stack.Screen name="FindDoctors" component={FindDoctorsPage} />
       <Stack.Screen name="Emergency" component={EmergencyPage} />
       <Stack.Screen name="DoctorDetails" component={DoctorDetailsPage} />
@@ -135,18 +139,16 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
-        setUser(firebaseUser);
-
+        
         if (firebaseUser) {
           const snapshot = await get(ref(database, `users/${firebaseUser.uid}`));
-
-          if (snapshot.exists()) {
-            setRole(snapshot.val().role);
-          } else {
-            setRole(null);
-          }
+          const fetchedRole = snapshot.exists() ? snapshot.val().role : null;
+          
+          setRole(fetchedRole)
+          setUser(firebaseUser); 
         } else {
           setRole(null);
+          setUser(null);
         }
       } catch (error) {
         console.error("Error fetching role:", error);
@@ -155,7 +157,6 @@ export default function App() {
         setIsLoading(false);
       }
     });
-
     return unsubscribe;
   }, []);
 

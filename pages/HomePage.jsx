@@ -8,10 +8,11 @@ import { ServiceGrid } from "../components/ServiceGrid";
 import { ScheduleCard } from "../components/ScheduleCard";
 import { HorizontalScrollList } from "../components/HorizontalScrollList";
 import { DoctorCard } from "../components/DoctorCard";
+import { useNavigation } from "@react-navigation/native";
 
 const HomePage = () => {
     const [displayName, setDisplayName] = useState(null);
-
+    const navigation = useNavigation();
     const services = [
         { id: 1, name: "Emergency", icon: "warning", screen: "Emergency" },
         { id: 2, name: "Hospital", icon: "business", screen: "Hospitals" },
@@ -46,18 +47,21 @@ const HomePage = () => {
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
+            <TopBar userName={displayName} avatarText="A" />
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-                <TopBar userName={displayName} avatarText="A" />
                 <SearchBar placeholder="Find doctor, clinic, or health issue" />
                 <ServiceGrid services={services} onServicePress={handleServicePress} customColors={serviceColors} />
-                <ScheduleCard 
+                
+                {/* This should also be done with a flat list or I can just chose not to show it 
+                and change the schedule card component */}
+                {/* <ScheduleCard 
                     doctorInitials="SA"
                     doctorName="Dr. Sarah Ahmed"
                     doctorSpecialty="Cardiologist"
                     date="Oct 24, 2023"
                     time="10:30 AM"
                     status="Confirmed"
-                />
+                /> */}
                 <HorizontalScrollList 
                     title="Top Specialists"
                     data={topSpecialists}

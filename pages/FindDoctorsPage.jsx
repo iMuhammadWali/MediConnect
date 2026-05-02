@@ -1,7 +1,10 @@
-import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, FlatList } from "react-native";
+import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, FlatList, ToastAndroid } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from '@expo/vector-icons';
+import { use, useEffect, useState } from "react";
+import { database } from "../config/firebase";
+import { get, ref } from "firebase/database";
 
 const FindDoctorsPage = () => {
     const navigation = useNavigation();
@@ -15,52 +18,64 @@ const FindDoctorsPage = () => {
         { id: 6, name: "Ophthalmology", isActive: false },
     ];
 
-    const doctors = [
-        {
-            id: 1,
-            initials: "SA",
-            name: "Dr. Sarah Ahmed",
-            specialty: "Cardiologist",
-            clinic: "City General",
-            rating: 4.9,
-            reviews: 124,
-            bgColor: "#dde1ff",
-            textColor: "#001355"
-        },
-        {
-            id: 2,
-            initials: "RK",
-            name: "Dr. Rahul Kumar",
-            specialty: "Neurologist",
-            clinic: "Apex Care",
-            rating: 4.7,
-            reviews: 89,
-            bgColor: "#00746a",
-            textColor: "#ffffff"
-        },
-        {
-            id: 3,
-            initials: "MP",
-            name: "Dr. Maya Patel",
-            specialty: "Pediatrician",
-            clinic: "Sunrise Clinic",
-            rating: 4.9,
-            reviews: 210,
-            bgColor: "#496ae8",
-            textColor: "#ffffff"
-        },
-        {
-            id: 4,
-            initials: "DS",
-            name: "Dr. David Smith",
-            specialty: "Orthopedic",
-            clinic: "Joint Care Center",
-            rating: 4.6,
-            reviews: 56,
-            bgColor: "#ffdad6",
-            textColor: "#93000a"
-        },
-    ];
+    const [doctors, setDoctors] = useState([]);
+    const [loading, setLoading] = useState(true);
+    useEffect(()=>{
+        fetchDoctors();
+    }, []);
+
+    // SO FUN to know how are filters applied. I think it is legit just array.filter though.
+    const getInitials = (fullName) => {
+        if (!fullName) return "DR";
+        const names = fullName.split(" ");
+        if (names.length === 1) return names[0].charAt(0).toUpperCase();
+        return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
+    };
+
+    const getBgColor = (specialty) => {
+        const colors = {
+            "Cardiologist": "#3b5bdb",
+            "Neurologist": "#00746a",
+            "Pediatrician": "#496ae8",
+            "Dermatologist": "#ba1a1a",
+            "Orthopedic": "#ff8c00",
+        };
+        return colors[specialty] || "#dde1ff";
+    };
+
+    const fetchDoctors = async () =>{
+        ToastAndroid.show("Fetching doctors", ToastAndroid.SHORT);
+        setLoading(true);
+        try{
+            const doctorsRef = ref(database, `doctors`);
+            const snapshot = await get(doctorsRef);
+            
+            if (snapshot.exists()){
+                const doctorsList = [];
+                snapshot.forEach((childSnapshot)=>{
+                    const doctor = childSnapshot.val();
+                    if (!doctor.isVerified) return;
+                    doctorsList.push({
+                        id:childSnapshot.key,
+                        initials: getInitials(doctor.fullName),
+                        name: doctor.fullName,
+                        primarySpecialization: doctor.primarySpecialization,
+                        clinic: doctor.clinicAddress,
+                        rating: doctor.rating,
+                        bgColor: getBgColor(doctor.primarySpecialization),
+                        textColor: "#ffffff",
+                    });
+                });
+                setDoctors(doctorsList);
+            }
+        } catch(e){
+            console.error("Error fetching doctors:", error);
+            ToastAndroid.show("Error", ToastAndroid.SHORT);
+        } finally {
+            setLoading(false);
+        }
+    }
+    // Now I need to see here how to fetch doctors
 
     const renderFilterChip = ({ item }) => (
         <TouchableOpacity style={[

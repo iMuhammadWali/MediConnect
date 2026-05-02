@@ -42,7 +42,7 @@ const SignUpPage = () => {
     const [education, setEducation] = useState("");
     const [services, setServices] = useState("");
 
-    // Dropdown options
+    // Dropdown options (I should really remove some of these)
     const specializations = [
         "Cardiologist", "Interventional Cardiologist", "Pediatric Cardiologist",
         "Neurologist", "Neurosurgeon", "Pediatric Neurologist",
@@ -132,7 +132,7 @@ const SignUpPage = () => {
         return true;
     };
 
-    // TODO: Understand this and make this work
+    // Claude said to add a fallback if write to database after createUserWithEmailAndPassword succeeds but set(ref, val) fails.
     const handleSignUp = async () => {
         if (!validateForm()) return;
 
@@ -143,47 +143,49 @@ const SignUpPage = () => {
             await updateProfile(user, { displayName: fullName });
             
             const userData = {
-                uid: user.uid,
                 role: userRole,
                 fullName,
                 email,
                 phone,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
-                ...(userRole === "doctor" ? {
-                    doctorInfo: {
-                        specializations: selectedSpecializations,
-                        primarySpecialization: selectedSpecializations[0] || "",
-                        languages: selectedLanguages,
-                        medicalLicense,
-                        hospitalAffiliation,
-                        experience: parseInt(experience),
-                        consultationFee: parseInt(consultationFee),
-                        bio,
-                        clinicAddress,
-                        clinicCity,
-                        clinicPhone,
-                        workingDays,
-                        startTime: startTime || "09:00 AM",
-                        endTime: endTime || "05:00 PM",
-                        education,
-                        services,
-                        // Show to patient only when isVerified equals true.
-                        isVerified: true,
-                        rating: 0,
-                        totalRatings: 0,
-                        patientsCount: 0
-                    }
-                } : {})
-            };
+            }
+            let doctorData = null;
+            if (userRole === "doctor"){
+                doctorData = {
+                    fullName,
+                    phone,
+                    specializations: selectedSpecializations,
+                    primarySpecialization: selectedSpecializations[0] || "",
+                    languages: selectedLanguages,
+                    medicalLicense,
+                    hospitalAffiliation,
+                    experience: parseInt(experience),
+                    consultationFee: parseInt(consultationFee),
+                    bio,
+                    clinicAddress,
+                    clinicCity,
+                    clinicPhone,
+                    workingDays,
+                    startTime: startTime || "09:00 AM",
+                    endTime: endTime || "05:00 PM",
+                    education,
+                    services,
+                    // Show to patient only when isVerified equals true.
+                    isVerified: true,
+                    rating: 0,
+                    totalRatings: 0,
+                    patientsCount: 0
+                }
+                await set(ref(database, `doctors/${user.uid}`), doctorData);
+            }
             const userRef = ref(database, `users/${user.uid}`);
             await set(userRef, userData);
             
             Alert.alert("Success", userRole === "doctor" 
                 ? "Doctor account created! Pending admin verification." 
                 : "Account created successfully!");
-            navigation.replace("Login");
-            
+
         } catch (error) {
             const errorMessages = {
                 'auth/email-already-in-use': "An account already exists with this email.",
