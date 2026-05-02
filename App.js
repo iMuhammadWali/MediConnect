@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 
 
-import { StyleSheet, Text, View, Image, Button } from 'react-native';
+import { StyleSheet, Text, View, Image, Button, ActivityIndicator } from 'react-native';
 import AppButton from './components/AppButton';
 import { createStaticNavigation } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -22,6 +22,10 @@ import SettingsPage from "./pages/SettingsPage";
 import FindDoctorsPage from "./pages/FindDoctorsPage";
 import EmergencyPage from "./pages/EmergencyPage";
 import DoctorDetailsPage from "./pages/DoctorDetails";
+import SignUpPage from "./pages/SignupPage";
+import { useEffect, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "./config/firebase";
 
 const myTabs = createBottomTabNavigator({
   initialRouteName: 'Home',
@@ -66,42 +70,71 @@ const myTabs = createBottomTabNavigator({
   }
 })
 
-const RootStack = createNativeStackNavigator({
-  initialRouteName: 'Home',
-  screenOptions: {
-    contentStyle: { backgroundColor: "#ffffff" }
-  },
-  screens: {
-    Onboarding: {
-      screen: OnboardingPage,
-      options: {
-        headerShown: false,
+const createRootStack = (initialRoute) => {
+  return createNativeStackNavigator({
+    initialRouteName: initialRoute,
+    screenOptions: {
+      contentStyle: { backgroundColor: "#ffffff" }
+    },
+    screens: {
+      Onboarding: {
+        screen: OnboardingPage,
+        options: {
+          headerShown: false,
+        }
+      },
+      Signup: {
+        screen: SignUpPage,
+        options: {
+          headerShown: false
+        }
+      },
+      Login: {
+        screen: LoginPage,
+        options:{
+          headerShown: false
+        }
+      },
+      AppTabs: {
+        screen: myTabs,
+        options: { headerShown: false }
+      },
+      FindDoctors: {
+        screen: FindDoctorsPage
+      },
+      Emergency: {
+        screen: EmergencyPage
+      },
+      DoctorDetails: {
+        screen: DoctorDetailsPage
       }
-    },
-    Login: {
-      screen: LoginPage,
-      options:{
-        headerShown: false
-      }
-    },
-    AppTabs: {
-      screen: myTabs,
-      options: { headerShown: false }
-    },
-    FindDoctors: {
-      screen: FindDoctorsPage
-    },
-    Emergency: {
-      screen: EmergencyPage
-    },
-    DoctorDetails: {
-      screen: DoctorDetailsPage
     }
-  }
-});
+  })
+};
 
-const Navigation = createStaticNavigation(RootStack); 
 
 export default function App() {
+  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState(null);
+
+  useEffect(()=>{
+    const unsubscribe = onAuthStateChanged(auth, (user)=>{
+      setUser(user);
+      setIsLoading(false);
+    });
+    return unsubscribe; 
+  }, []);
+
+  if (isLoading){
+    return (
+      <View style={{flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "white"}}>
+        <ActivityIndicator size="large" color="#1a40c2"></ActivityIndicator>
+      </View>
+    )
+  }
+
+  const RootStack = createRootStack(user? "AppTabs" : "Onboarding");
+  const Navigation = createStaticNavigation(RootStack); 
+
   return <Navigation/>
 }

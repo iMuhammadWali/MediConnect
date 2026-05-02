@@ -3,86 +3,84 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from "react";
-
 import { auth } from "../config/firebase";
+
 import { 
-  onAuthStateChanged,
-  signInWithEmailAndPassword
+  createUserWithEmailAndPassword,
+  updateProfile
 } from "firebase/auth";
 
-const LoginPage = () => {
+const SignUpPage = () => {
     const navigation = useNavigation();
-
-    const [initializing, setInitializing] = useState(true);
     const [loading, setLoading] = useState(false);
+
     const [userRole, setUserRole] = useState("patient");
+    const [fullName, setFullName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+
     const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-    useEffect(() => {
-      const subscriber = onAuthStateChanged(auth, (u) => {
-        setInitializing(false);
-
-        if (u) {
-          navigation.replace("AppTabs");
+    const handleSignUp = async () => {
+        if (!fullName || !email || !password || !confirmPassword) {
+            // TODO: Give meaninful AHCI errors if time.
+            Alert.alert("Error", "Please fill in all fields");
+            return;
         }
-      });
 
-      return subscriber;
-    }, []);
-
-    const handleLogin = async () => {
-      if (!email || !password) {
-          Alert.alert("Error", "Please fill in all fields");
-          return;
-      }
-
-      setLoading(true);
-
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
-        Alert.alert("Success", "Logged in successfully!");
-      } catch (error) {
-        let errorMessage = "Login failed. Please try again.";
-        switch (error.code) {
-            case 'auth/invalid-email':
-                errorMessage = "Invalid email address format.";
-                break;
-            case 'auth/user-disabled':
-                errorMessage = "This account has been disabled.";
-                break;
-            case 'auth/user-not-found':
-                errorMessage = "No account found with this email.";
-                break;
-            case 'auth/wrong-password':
-                errorMessage = "Incorrect password.";
-                break;
-            default:
-                errorMessage = error.message;
+        if (password !== confirmPassword) {
+            Alert.alert("Error", "Passwords do not match");
+            return;
         }
-        Alert.alert("Login Error", errorMessage);
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
+
+        if (password.length < 6) {
+            Alert.alert("Error", "Password must be at least 6 characters");
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            
+            // Update user profile with full name
+            await updateProfile(userCredential.user, {
+                displayName: fullName
+            });
+
+            Alert.alert("Success", "Account created successfully!");
+            navigation.replace("Login");
+        } catch (error) {
+            let errorMessage = "Sign up failed. Please try again.";
+            switch (error.code) {
+                case 'auth/email-already-in-use':
+                    errorMessage = "An account already exists with this email.";
+                    break;
+                case 'auth/invalid-email':
+                    errorMessage = "Invalid email address format.";
+                    break;
+                case 'auth/weak-password':
+                    errorMessage = "Password is too weak. Use at least 6 characters.";
+                    break;
+                default:
+                    errorMessage = error.message;
+            }
+            Alert.alert("Sign Up Error", errorMessage);
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleGoogleLogin = () => {
-        Alert.alert("Google Login", "Google sign-in integration would go here");
+    const handleGoogleSignUp = () => {
+        Alert.alert("Google Sign Up", "Google sign-in integration would go here");
     };
 
-    const handleRegister = () => {
-        navigation.navigate("Signup");
+    const handleLogin = () => {
+        navigation.replace("Login");
     };
-
-    const handleForgotPassword = () => {
-        navigation.navigate("ForgotPassword");
-    };
-
-    if (initializing) {
-        return null;
-    }
 
     return (
         <SafeAreaView style={styles.container}>
@@ -100,9 +98,9 @@ const LoginPage = () => {
                             <Text style={styles.logoText}>MediConnect</Text>
                         </View>
 
-                        {/* Login Card */}
-                        <View style={styles.loginCard}>
-                            <Text style={styles.welcomeTitle}>Welcome Back</Text>
+                        {/* Sign Up Card */}
+                        <View style={styles.signUpCard}>
+                            <Text style={styles.welcomeTitle}>Create Account</Text>
 
                             {/* Role Toggle */}
                             <View style={styles.roleToggle}>
@@ -124,6 +122,22 @@ const LoginPage = () => {
 
                             {/* Form */}
                             <View style={styles.form}>
+                                {/* Full Name Input */}
+                                <View style={styles.inputGroup}>
+                                    <Text style={styles.inputLabel}>Full Name</Text>
+                                    <View style={styles.inputContainer}>
+                                        <Ionicons name="person-outline" size={18} color="#c4c5d6" style={styles.inputIcon} />
+                                        <TextInput
+                                            style={styles.input}
+                                            placeholder="Muhammad Wali"
+                                            placeholderTextColor="#c4c5d6"
+                                            value={fullName}
+                                            onChangeText={setFullName}
+                                            autoCapitalize="words"
+                                        />
+                                    </View>
+                                </View>
+
                                 {/* Email Input */}
                                 <View style={styles.inputGroup}>
                                     <Text style={styles.inputLabel}>Email Address</Text>
@@ -143,12 +157,7 @@ const LoginPage = () => {
 
                                 {/* Password Input */}
                                 <View style={styles.inputGroup}>
-                                    <View style={styles.passwordHeader}>
-                                        <Text style={styles.inputLabel}>Password</Text>
-                                        <TouchableOpacity onPress={handleForgotPassword}>
-                                            <Text style={styles.forgotLink}>Forgot?</Text>
-                                        </TouchableOpacity>
-                                    </View>
+                                    <Text style={styles.inputLabel}>Password</Text>
                                     <View style={styles.inputContainer}>
                                         <Ionicons name="lock-closed-outline" size={18} color="#c4c5d6" style={styles.inputIcon} />
                                         <TextInput
@@ -169,14 +178,38 @@ const LoginPage = () => {
                                     </View>
                                 </View>
 
-                                {/* Login Button */}
+                                {/* Confirm Password Input */}
+                                <View style={styles.inputGroup}>
+                                    <Text style={styles.inputLabel}>Confirm Password</Text>
+                                    <View style={styles.inputContainer}>
+                                        <Ionicons name="lock-closed-outline" size={18} color="#c4c5d6" style={styles.inputIcon} />
+                                        <TextInput
+                                            style={[styles.input, { flex: 1 }]}
+                                            placeholder="********"
+                                            placeholderTextColor="#c4c5d6"
+                                            value={confirmPassword}
+                                            onChangeText={setConfirmPassword}
+                                            secureTextEntry={!showConfirmPassword}
+                                        />
+                                        <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+                                            <Ionicons 
+                                                name={showConfirmPassword ? "eye-outline" : "eye-off-outline"} 
+                                                size={18} 
+                                                color="#c4c5d6" 
+                                            />
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+
+                                {/* Sign Up Button */}
                                 <TouchableOpacity 
-                                    style={styles.loginButton} 
-                                    onPress={handleLogin}
+                                    style={styles.signUpButton} 
+                                    onPress={handleSignUp}
                                     disabled={loading}>
-                                    <Text style={styles.loginButtonText}>
-                                        {loading ? "Logging in..." : "Log in"}
+                                    <Text style={styles.signUpButtonText}>
+                                        {loading ? "Creating Account..." : "Sign Up"}
                                     </Text>
+                                    {/* Should hide this button or add a loading circle*/}
                                 </TouchableOpacity>
                             </View>
 
@@ -188,7 +221,7 @@ const LoginPage = () => {
                             </View>
 
                             {/* Google Button */}
-                            <TouchableOpacity style={styles.googleButton} onPress={handleGoogleLogin}>
+                            <TouchableOpacity style={styles.googleButton} onPress={handleGoogleSignUp}>
                                 <View style={styles.googleIconContainer}>
                                     <Image 
                                         source={{ uri: 'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png' }}
@@ -199,12 +232,12 @@ const LoginPage = () => {
                             </TouchableOpacity>
                         </View>
 
-                        {/* Register Link */}
-                        <View style={styles.registerContainer}>
-                            <Text style={styles.registerText}>
-                                Don't have an account?{" "}
-                                <Text style={styles.registerLink} onPress={handleRegister}>
-                                    Register
+                        {/* Login Link */}
+                        <View style={styles.loginContainer}>
+                            <Text style={styles.loginText}>
+                                Already have an account?{" "}
+                                <Text style={styles.loginLink} onPress={handleLogin}>
+                                    Log in
                                 </Text>
                             </Text>
                         </View>
@@ -245,7 +278,7 @@ const styles = StyleSheet.create({
         letterSpacing: -0.5,
         color: "#1a40c2",
     },
-    loginCard: {
+    signUpCard: {
         backgroundColor: "#ffffff",
         borderRadius: 24,
         padding: 24,
@@ -306,17 +339,6 @@ const styles = StyleSheet.create({
         letterSpacing: 0.5,
         marginLeft: 4,
     },
-    passwordHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "baseline",
-        paddingHorizontal: 4,
-    },
-    forgotLink: {
-        fontSize: 11,
-        fontWeight: "500",
-        color: "#1a40c2",
-    },
     inputContainer: {
         flexDirection: "row",
         alignItems: "center",
@@ -334,7 +356,7 @@ const styles = StyleSheet.create({
         color: "#191c1e",
         paddingVertical: 10,
     },
-    loginButton: {
+    signUpButton: {
         backgroundColor: "#1a40c2",
         borderRadius: 9999,
         paddingVertical: 12,
@@ -346,7 +368,7 @@ const styles = StyleSheet.create({
         shadowRadius: 12,
         elevation: 3,
     },
-    loginButtonText: {
+    signUpButtonText: {
         color: "#ffffff",
         fontSize: 14,
         fontWeight: "600",
@@ -389,17 +411,17 @@ const styles = StyleSheet.create({
         fontWeight: "500",
         color: "#191c1e",
     },
-    registerContainer: {
+    loginContainer: {
         marginTop: 24,
     },
-    registerText: {
+    loginText: {
         fontSize: 13,
         color: "#444654",
     },
-    registerLink: {
+    loginLink: {
         fontWeight: "600",
         color: "#1a40c2",
     },
 });
 
-export default LoginPage;
+export default SignUpPage;

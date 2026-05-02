@@ -3,11 +3,16 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
     
 import {Ionicons} from "@expo/vector-icons"
+import { useEffect, useState } from "react";
+import { subscribe } from "firebase/data-connect";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "../config/firebase";
 // TODO: Change all the icons in this page.
 // Have to work on the navbar.
 
 const HomePage = () => {
     const navigation = useNavigation();
+    const [displayName, setDisplayName] = useState(null);
 
     // This should be hardcoded.
     const services = [
@@ -32,6 +37,13 @@ const HomePage = () => {
     const handleServicePress = (screenName) => {
         navigation.navigate(screenName);
     };
+
+    useEffect(()=>{
+        const subscriber = onAuthStateChanged(auth, (user) => {
+            setDisplayName(user? user.displayName: "User");
+        }); 
+        return subscriber;
+    }, []);
 
     const renderServiceItem = ({ item }) => (
         <TouchableOpacity 
@@ -84,8 +96,8 @@ const HomePage = () => {
                         <View>
                             <Text style={styles.greeting}>Good Morning</Text>
                             <Text style={styles.welcomeText}>Welcome Back
-                                <Text style={styles.welcomeText}>{" Guest"}</Text>
                             </Text>
+                            <Text style={styles.welcomeText}>{displayName}</Text>
                         </View>
                     </View>
                     <TouchableOpacity style={styles.notificationButton}>
