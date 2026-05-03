@@ -51,7 +51,11 @@ const HospitalsPage = () => {
                         </View>
                     ) :
                     filteredHospitals.map(h => (
-                        <View key={h.id} style={styles.card}>
+                        <TouchableOpacity 
+                            key={h.id} 
+                            style={styles.card}
+                            onPress={() => navigation.navigate("HospitalDetails", { hospital: h })}
+                        >
                             <View style={styles.iconContainer}>
                                 <Ionicons name="business" size={24} color="#1a40c2" />
                             </View>
@@ -60,7 +64,7 @@ const HospitalsPage = () => {
                                 <Text style={styles.address}>{h.address}</Text>
                                 <Text style={styles.phone}>{h.phone}</Text>
                             </View>
-                        </View>
+                        </TouchableOpacity>
                     ))
                 }
             </ScrollView>
