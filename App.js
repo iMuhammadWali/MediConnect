@@ -15,7 +15,8 @@ import LoginPage from "./pages/LoginPage";
 import SignUpPage from "./pages/SignupPage";
 
 import HomePage from "./pages/HomePage";
-import SchedulesPage from "./pages/SchedulesPage";
+import AppointmentsPage from "./pages/AppointmentsPage";
+import SchedulerPage from "./pages/SchedulerPage";
 import MessagesPage from "./pages/MessagesPage";
 import SettingsPage from "./pages/SettingsPage";
 
@@ -33,7 +34,9 @@ import AdminHospitalsPage from "./pages/admin/AdminHospitalsPage";
 
 import RadiologyPage from "./pages/RadiologyPage";
 import HospitalsPage from "./pages/HospitalsPage";
-import { BloodBankPage, PrescriptionPage, CheckUpPage } from "./pages/ComingSoonPages";
+import HospitalDetailsPage from "./pages/HospitalDetailsPage";
+import { BloodBankPage } from "./pages/ComingSoonPages";
+import PrescriptionPage from "./pages/PrescriptionPage";
 import ChatPage from "./pages/ChatPage";
 import PatientDetailsPage from "./pages/PatientDetailsPage";
 
@@ -59,8 +62,18 @@ function PatientTabs() {
       />
 
       <Tab.Screen
-        name="Schedule"
-        component={SchedulesPage}
+        name="Appointments"
+        component={AppointmentsPage}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="list-outline" size={size} color={color} />
+          ),
+        }}
+      />
+
+      <Tab.Screen
+        name="Scheduler"
+        component={SchedulerPage}
         options={{
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar-outline" size={size} color={color} />
@@ -147,9 +160,9 @@ function PatientStack() {
       <Stack.Screen name="DoctorDetails" component={DoctorDetailsPage} />
       <Stack.Screen name="Radiology" component={RadiologyPage} options={{ headerShown: false }} />
       <Stack.Screen name="Hospitals" component={HospitalsPage} options={{ headerShown: false }} />
+      <Stack.Screen name="HospitalDetails" component={HospitalDetailsPage} options={{ headerShown: false }} />
       <Stack.Screen name="BloodBank" component={BloodBankPage} options={{ headerShown: false }} />
       <Stack.Screen name="Prescription" component={PrescriptionPage} options={{ headerShown: false }} />
-      <Stack.Screen name="CheckUp" component={CheckUpPage} options={{ headerShown: false }} />
       <Stack.Screen name="ChatPage" component={ChatPage} options={{ headerShown: false }} />
     </Stack.Navigator>
   );

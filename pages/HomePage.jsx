@@ -22,7 +22,6 @@ const HomePage = () => {
         { id: 3, name: "Blood", icon: "water", screen: "BloodBank" },
         { id: 4, name: "Prescription", icon: "document-text", screen: "Prescription" },
         { id: 5, name: "Doctor", icon: "medkit", screen: "FindDoctors" },
-        { id: 6, name: "Check Up", icon: "heart", screen: "CheckUp" },
         { id: 8, name: "Radiology", icon: "scan", screen: "Radiology" },
     ];
 
