@@ -108,11 +108,12 @@ function PatientTabs() {
 function DoctorTabs() {
   return (
     <Tab.Navigator
-      screenOptions={{ headerShown: false }}>
+      screenOptions={{ }}>
       <Tab.Screen
         name="Dashboard"
         component={DoctorDashboardPage}
         options={{
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home-outline" size={size} color={color} />
           ),
