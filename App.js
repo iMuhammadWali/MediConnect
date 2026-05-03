@@ -16,7 +16,7 @@ import SignUpPage from "./pages/SignupPage";
 
 import HomePage from "./pages/HomePage";
 import AppointmentsPage from "./pages/AppointmentsPage";
-import SchedulerPage from "./pages/SchedulerPage";
+
 import MessagesPage from "./pages/MessagesPage";
 import SettingsPage from "./pages/SettingsPage";
 
@@ -63,18 +63,8 @@ function PatientTabs() {
       />
 
       <Tab.Screen
-        name="Appointments"
+        name="Schedule"
         component={AppointmentsPage}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="list-outline" size={size} color={color} />
-          ),
-        }}
-      />
-
-      <Tab.Screen
-        name="Scheduler"
-        component={SchedulerPage}
         options={{
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar-outline" size={size} color={color} />
