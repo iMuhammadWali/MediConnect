@@ -144,7 +144,7 @@ function PatientStack() {
       <Stack.Screen name="PatientTabs" component={PatientTabs} options={{ headerShown: false }} />
       <Stack.Screen name="FindDoctors" component={FindDoctorsPage} />
       <Stack.Screen name="Emergency" component={EmergencyPage} />
-      <Stack.Screen name="DoctorDetails" component={DoctorDetailsPage} />
+      <Stack.Screen name="DoctorDetails" component={DoctorDetailsPage} options={{ headerShown: false }}/>
       <Stack.Screen name="Radiology" component={RadiologyPage} options={{ headerShown: false }} />
       <Stack.Screen name="Hospitals" component={HospitalsPage} options={{ headerShown: false }} />
       <Stack.Screen name="BloodBank" component={BloodBankPage} options={{ headerShown: false }} />
