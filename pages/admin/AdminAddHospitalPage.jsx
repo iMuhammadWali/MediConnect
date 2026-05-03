@@ -25,15 +25,23 @@ const AdminAddHospitalPage = () => {
         if (!searchQuery.trim()) return;
         setSearching(true);
         try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`);
+            const res = await fetch(
+                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`,
+                {
+                    headers: {
+                        'User-Agent': 'MediConnect/1.0',
+                        'Accept': 'application/json'
+                    }
+                }
+            );            
             const data = await res.json();
             setSearchResults(data);
         } catch (e) {
-            Alert.alert("Error", "Failed to search location");
+            Alert.alert("Error", e.message || JSON.stringify(e));
         } finally {
-            setSearching(false);
-        }
-    };
+                    setSearching(false);
+                }
+            };
 
     const handleAdd = async () => {
         if (!name || !address || !phone) {
