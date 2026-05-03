@@ -3,7 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from '@expo/vector-icons';
 import { use, useEffect, useState } from "react";
-import { database } from "../config/firebase";
+import { database } from "../../config/firebase";
 import { get, ref } from "firebase/database";
 
 const FindDoctorsPage = () => {
@@ -44,7 +44,6 @@ const FindDoctorsPage = () => {
     };
 
     const fetchDoctors = async () =>{
-        ToastAndroid.show("Fetching doctors", ToastAndroid.SHORT);
         setLoading(true);
         try{
             const doctorsRef = ref(database, `doctors`);
@@ -106,8 +105,8 @@ const FindDoctorsPage = () => {
                 </View>
             </View>
             <TouchableOpacity 
-            onPress={()=>{navigation.navigate("DoctorDetails")}}
-            style={styles.bookButton}>
+                onPress={() => navigation.navigate("DoctorDetails", { doctorId: item.id })}            
+                style={styles.bookButton}>
                 <Text style={styles.bookButtonText}>Book</Text>
             </TouchableOpacity>
         </View>

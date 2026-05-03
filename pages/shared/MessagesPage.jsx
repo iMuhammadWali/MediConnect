@@ -4,7 +4,7 @@ import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import { ref, onValue } from "firebase/database";
-import { database, auth } from "../config/firebase";
+import { database, auth } from "../../config/firebase";
 
 const MessagesPage = () => {
     const navigation = useNavigation();
@@ -30,9 +30,6 @@ const MessagesPage = () => {
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>Messages</Text>
-            </View>
             <ScrollView style={styles.content} contentContainerStyle={{padding: 20, gap: 12}}>
                 {loading ? <ActivityIndicator size="large" color="#1a40c2" /> :
                     users.length === 0 ? (

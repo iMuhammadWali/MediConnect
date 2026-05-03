@@ -2,10 +2,10 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-nati
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from '@expo/vector-icons';
-import { TopBar } from "../components/TopBar";
+import { TopBar } from "../../components/TopBar";
 import { useEffect, useState } from "react";
 import { ref, onValue } from "firebase/database";
-import { database, auth } from "../config/firebase";
+import { database, auth } from "../../config/firebase";
 
 const DoctorDashboardPage = () => {
     const navigation = useNavigation();
@@ -66,8 +66,8 @@ const DoctorDashboardPage = () => {
         <View style={[styles.statCard, { backgroundColor: color }]}>
             <Ionicons name={icon} size={24} color={iconColor} />
             <View style={styles.statTextContainer}>
-                <Text style={styles.statTitle}>{title}</Text>
-                <Text style={styles.statValue}>{value}</Text>
+                <Text style={styles.statTitle} numberOfLines={2}>{title}</Text>
+                <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
             </View>
         </View>
     );
@@ -139,15 +139,15 @@ const DoctorDashboardPage = () => {
                         {upcomingApps.length === 0 ? (
                             <Text style={{color: "#747686", textAlign: "center", marginTop: 20}}>No upcoming appointments.</Text>
                         ) : upcomingApps.slice(0, 5).map((item) => {
-                            const pName = patientsMap[item.patientId]?.fullName || "Unknown Patient";
-                            const pInitials = pName.substring(0, 2).toUpperCase();
+                            const pName = patientsMap[item.patientId]?.fullName || "Loading Patient...";
+                            const pInitials = pName !== "Loading Patient..." ? pName.substring(0, 2).toUpperCase() : "PT";
                             return (
                             <ScheduleItem 
                                 key={item.id} 
                                 item={{
                                     initials: pInitials,
                                     name: pName,
-                                    time: `${item.date} at ${item.time}`,
+                                    time: `${item.date || "TBD"} at ${item.time || "TBD"}`,
                                     type: "Consultation",
                                     typeColor: "#dde1ff",
                                     typeTextColor: "#0736ba",
@@ -183,10 +183,10 @@ const styles = StyleSheet.create({
     statCard: {
         flex: 1,
         backgroundColor: "#E6F1FB",
-        padding: 16,
+        padding: 12,
         borderRadius: 16,
         justifyContent: "space-between",
-        aspectRatio: 1,
+        minHeight: 110,
     },
     statTextContainer: {
         marginTop: 12,

@@ -46,27 +46,7 @@ const AdminDoctorsPage = () => {
         };
     }, []);
 
-    const handleVerify = (uid, currentStatus) => {
-        const newStatus = !currentStatus;
-        const label = newStatus ? "verify" : "unverify";
-        Alert.alert(
-            `${newStatus ? "Verify" : "Unverify"} Doctor`,
-            `Are you sure you want to ${label} this doctor?`,
-            [
-                { text: "Cancel", style: "cancel" },
-                {
-                    text: "Confirm",
-                    onPress: async () => {
-                        try {
-                            await update(ref(database, `doctors/${uid}`), { isVerified: newStatus });
-                        } catch (e) {
-                            Alert.alert("Error", e.message);
-                        }
-                    },
-                },
-            ]
-        );
-    };
+    // handleVerify removed, navigation handled inline now.
 
     const handleRemove = (uid, name) => {
         Alert.alert(
@@ -134,20 +114,22 @@ const AdminDoctorsPage = () => {
 
                 <View style={styles.actionButtons}>
                     {/* Edit */}
-                    <TouchableOpacity
-                        style={styles.iconButton}
-                        onPress={() => navigation.navigate("AdminDoctorEdit", { doctorUid: doctor.uid })}
-                    >
-                        <Ionicons name="create-outline" size={18} color="#1a40c2" />
-                    </TouchableOpacity>
+                    {doctor.isVerified && (
+                        <TouchableOpacity
+                            style={styles.iconButton}
+                            onPress={() => navigation.navigate("AdminDoctorEdit", { doctorUid: doctor.uid })}
+                        >
+                            <Ionicons name="create-outline" size={18} color="#1a40c2" />
+                        </TouchableOpacity>
+                    )}
 
-                    {/* Verify toggle */}
+                    {/* Review Doctor */}
                     <TouchableOpacity
                         style={[styles.iconButton, doctor.isVerified ? styles.iconButtonWarning : styles.iconButtonSuccess]}
-                        onPress={() => handleVerify(doctor.uid, doctor.isVerified)}
+                        onPress={() => navigation.navigate("AdminDoctorApproval", { doctorUid: doctor.uid })}
                     >
                         <Ionicons
-                            name={doctor.isVerified ? "close-circle-outline" : "checkmark-circle-outline"}
+                            name="eye-outline"
                             size={18}
                             color={doctor.isVerified ? "#e07b00" : "#1d8a4e"}
                         />

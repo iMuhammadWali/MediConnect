@@ -10,36 +10,40 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth, database } from "./config/firebase";
 import { get, onValue, ref } from "firebase/database";
 
-import OnboardingPage from "./pages/OnboardingPage";
-import LoginPage from "./pages/LoginPage";
-import SignUpPage from "./pages/SignupPage";
+import OnboardingPage from "./pages/auth/OnboardingPage";
+import LoginPage from "./pages/auth/LoginPage";
+import SignUpPage from "./pages/auth/SignupPage";
 
-import HomePage from "./pages/HomePage";
-import AppointmentsPage from "./pages/AppointmentsPage";
+import HomePage from "./pages/patient/HomePage";
+import AppointmentsPage from "./pages/patient/AppointmentsPage";
+import SchedulerPage from "./pages/shared/SchedulerPage";
+import MessagesPage from "./pages/shared/MessagesPage";
+import SettingsPage from "./pages/shared/SettingsPage";
 
-import MessagesPage from "./pages/MessagesPage";
-import SettingsPage from "./pages/SettingsPage";
+import FindDoctorsPage from "./pages/patient/FindDoctorsPage";
+import EmergencyPage from "./pages/patient/EmergencyPage";
+import DoctorDetailsPage from "./pages/patient/DoctorDetails";
 
-import FindDoctorsPage from "./pages/FindDoctorsPage";
-import EmergencyPage from "./pages/EmergencyPage";
-import DoctorDetailsPage from "./pages/DoctorDetails";
-
-import DoctorDashboardPage from "./pages/DoctorDashboard";
+import DoctorDashboardPage from "./pages/doctor/DoctorDashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminDoctorsPage from "./pages/admin/AdminDoctorsPage";
 import AdminPatientsPage from "./pages/admin/AdminPatientsPage";
 import AdminDoctorEditPage from "./pages/admin/AdminDoctorEditPage";
 import AdminAddHospitalPage from "./pages/admin/AdminAddHospitalPage";
 import AdminHospitalsPage from "./pages/admin/AdminHospitalsPage";
+import AdminDoctorApprovalPage from "./pages/admin/AdminDoctorApprovalPage";
+import AdminAffiliationRequestsPage from "./pages/admin/AdminAffiliationRequestsPage";
 
-import RadiologyPage from "./pages/RadiologyPage";
-import HospitalsPage from "./pages/HospitalsPage";
-import HospitalDetailsPage from "./pages/HospitalDetailsPage";
-import { BloodBankPage } from "./pages/ComingSoonPages";
-import PrescriptionPage from "./pages/PrescriptionPage";
-import ChatPage from "./pages/ChatPage";
-import PatientDetailsPage from "./pages/PatientDetailsPage";
-import DoctorAffiliationsPage from "./pages/DoctorAffiliationsPage";
+import RadiologyPage from "./pages/patient/RadiologyPage";
+import HospitalsPage from "./pages/patient/HospitalsPage";
+import HospitalDetailsPage from "./pages/patient/HospitalDetailsPage";
+import { BloodBankPage } from "./pages/shared/ComingSoonPages";
+import PrescriptionPage from "./pages/patient/PrescriptionPage";
+import ChatPage from "./pages/shared/ChatPage";
+import PatientDetailsPage from "./pages/doctor/PatientDetailsPage";
+import DoctorAffiliationsPage from "./pages/doctor/DoctorAffiliationsPage";
+import RequestAffiliationPage from "./pages/doctor/RequestAffiliationPage";
+import DoctorSchedulePage from "./pages/doctor/DoctorSchedulePage";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -63,14 +67,24 @@ function PatientTabs() {
       />
 
       <Tab.Screen
-        name="Schedule"
+        name="Appointments"
         component={AppointmentsPage}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="list-outline" size={size} color={color} />
+          ),
+        }}
+      />
+
+      {/* <Tab.Screen
+        name="Scheduler"
+        component={SchedulerPage}
         options={{
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar-outline" size={size} color={color} />
           ),
         }}
-      />
+      /> */}
 
       <Tab.Screen
         name="Messages"
@@ -98,17 +112,29 @@ function PatientTabs() {
 function DoctorTabs() {
   return (
     <Tab.Navigator
-      screenOptions={{ headerShown: false }}>
+      screenOptions={{}}>
       <Tab.Screen
         name="Dashboard"
         component={DoctorDashboardPage}
         options={{
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home-outline" size={size} color={color} />
           ),
         }}
       />
-        
+
+      <Tab.Screen
+        name="Schedule"
+        component={DoctorSchedulePage}
+        options={{
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="calendar-outline" size={size} color={color} />
+          ),
+        }}
+      />
+
       <Tab.Screen
         name="Messages"
         component={MessagesPage}
@@ -123,6 +149,7 @@ function DoctorTabs() {
         name="Settings"
         component={SettingsPage}
         options={{
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="settings-outline" size={size} color={color} />
           ),
@@ -148,7 +175,7 @@ function PatientStack() {
       <Stack.Screen name="PatientTabs" component={PatientTabs} options={{ headerShown: false }} />
       <Stack.Screen name="FindDoctors" component={FindDoctorsPage} />
       <Stack.Screen name="Emergency" component={EmergencyPage} />
-      <Stack.Screen name="DoctorDetails" component={DoctorDetailsPage} options={{ headerShown: false }}/>
+      <Stack.Screen name="DoctorDetails" component={DoctorDetailsPage} options={{ headerShown: false }} />
       <Stack.Screen name="Radiology" component={RadiologyPage} options={{ headerShown: false }} />
       <Stack.Screen name="Hospitals" component={HospitalsPage} options={{ headerShown: false }} />
       <Stack.Screen name="HospitalDetails" component={HospitalDetailsPage} options={{ headerShown: false }} />
@@ -167,6 +194,7 @@ function DoctorStack() {
       <Stack.Screen name="ChatPage" component={ChatPage} />
       <Stack.Screen name="PatientDetails" component={PatientDetailsPage} />
       <Stack.Screen name="DoctorAffiliations" component={DoctorAffiliationsPage} />
+      <Stack.Screen name="RequestAffiliation" component={RequestAffiliationPage} />
     </Stack.Navigator>
   );
 }
@@ -176,10 +204,12 @@ function AdminStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
       <Stack.Screen name="AdminDoctors" component={AdminDoctorsPage} />
+      <Stack.Screen name="AdminDoctorApproval" component={AdminDoctorApprovalPage} />
       <Stack.Screen name="AdminPatients" component={AdminPatientsPage} />
       <Stack.Screen name="AdminDoctorEdit" component={AdminDoctorEditPage} />
       <Stack.Screen name="AdminHospitals" component={AdminHospitalsPage} />
       <Stack.Screen name="AdminAddHospital" component={AdminAddHospitalPage} />
+      <Stack.Screen name="AdminAffiliationRequests" component={AdminAffiliationRequestsPage} />
     </Stack.Navigator>
   );
 }

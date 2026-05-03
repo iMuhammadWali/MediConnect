@@ -12,7 +12,7 @@ const OnboardingPage = () => {
                 <View style={styles.logoSection}>
                     <View style={styles.logoWrapper}>
                         <Image
-                            source={require('../assets/logo.png')}
+                            source={require('../../assets/logo.png')}
                             style={styles.logo}
                         />
                     </View>

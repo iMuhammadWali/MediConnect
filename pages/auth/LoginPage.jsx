@@ -2,10 +2,10 @@ import { View, Text, Image, StyleSheet, TouchableOpacity, KeyboardAvoidingView, 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { useEffect, useState } from "react";
-import { auth } from "../config/firebase";
+import { auth } from "../../config/firebase";
 import { onAuthStateChanged, signInWithEmailAndPassword } from "firebase/auth";
-import { FormInput } from "../components/FormInput";
-import { SectionDivider } from "../components/SectionDivider";
+import { FormInput } from "../../components/FormInput";
+import { SectionDivider } from "../../components/SectionDivider";
 
 const LoginPage = () => {
     const navigation = useNavigation();

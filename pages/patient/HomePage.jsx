@@ -1,14 +1,14 @@
 import { View, StyleSheet, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
-import { auth, database } from "../config/firebase";
+import { auth, database } from "../../config/firebase";
 import { ref, onValue } from "firebase/database";
-import { TopBar } from "../components/TopBar";
-import { SearchBar } from "../components/SearchBar";
-import { ServiceGrid } from "../components/ServiceGrid";
-import { ScheduleCard } from "../components/ScheduleCard";
-import { HorizontalScrollList } from "../components/HorizontalScrollList";
-import { DoctorCard } from "../components/DoctorCard";
+import { TopBar } from "../../components/TopBar";
+import { SearchBar } from "../../components/SearchBar";
+import { ServiceGrid } from "../../components/ServiceGrid";
+import { ScheduleCard } from "../../components/ScheduleCard";
+import { HorizontalScrollList } from "../../components/HorizontalScrollList";
+import { DoctorCard } from "../../components/DoctorCard";
 import { useNavigation } from "@react-navigation/native";
 
 const HomePage = () => {

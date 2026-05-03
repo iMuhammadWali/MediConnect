@@ -4,8 +4,37 @@ import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from "react";
 import { ref, onValue } from "firebase/database";
-import { database, auth } from "../config/firebase";
+import { database, auth } from "../../config/firebase";
 import { Agenda } from 'react-native-calendars';
+
+const theme = {
+    agendaDayTextColor: '#747686',
+    agendaDayNumColor: '#191c1e',
+    agendaTodayColor: '#1a40c2',
+    agendaKnobColor: '#c4c5d6',
+    dotColor: '#1a40c2',
+    selectedDayBackgroundColor: '#1a40c2',
+};
+
+const parseDateString = (dateStr) => {
+    let d = new Date(dateStr);
+    if (!isNaN(d.getTime())) return d;
+    
+    // Attempt to parse 'May 4, 2026'
+    if (typeof dateStr === 'string') {
+        const parts = dateStr.replace(/,/g, '').split(' ');
+        if (parts.length >= 3) {
+            const monthMap = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };
+            const month = monthMap[parts[0].substring(0, 3)];
+            const day = parseInt(parts[1], 10);
+            const year = parseInt(parts[2], 10);
+            if (month !== undefined && !isNaN(day) && !isNaN(year)) {
+                return new Date(Date.UTC(year, month, day));
+            }
+        }
+    }
+    throw new Error("Invalid date format");
+};
 
 const SchedulerPage = () => {
     const navigation = useNavigation();
@@ -34,7 +63,7 @@ const SchedulerPage = () => {
                     const data = c.val();
                     if (data.patientId === uid || data.doctorId === uid) {
                         try {
-                            const d = new Date(data.date);
+                            const d = parseDateString(data.date);
                             const formattedDate = d.toISOString().split('T')[0];
                             
                             if (!appointmentsData[formattedDate]) {
@@ -112,14 +141,7 @@ const SchedulerPage = () => {
                 selected={new Date().toISOString().split('T')[0]}
                 renderItem={renderItem}
                 renderEmptyDate={renderEmptyDate}
-                theme={{
-                    agendaDayTextColor: '#747686',
-                    agendaDayNumColor: '#191c1e',
-                    agendaTodayColor: '#1a40c2',
-                    agendaKnobColor: '#c4c5d6',
-                    dotColor: '#1a40c2',
-                    selectedDayBackgroundColor: '#1a40c2',
-                }}
+                theme={theme}
                 showClosingKnob={true}
             />
         </SafeAreaView>

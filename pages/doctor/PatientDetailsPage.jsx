@@ -4,7 +4,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from "react";
 import { ref, onValue } from "firebase/database";
-import { database } from "../config/firebase";
+import { database } from "../../config/firebase";
 
 const PatientDetailsPage = () => {
     const navigation = useNavigation();

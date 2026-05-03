@@ -56,6 +56,7 @@ const AdminDashboard = () => {
 
     const quickActions = [
         { title: "Manage Doctors", subtitle: "View, verify & edit doctors", icon: "medkit-outline", screen: "AdminDoctors" },
+        { title: "Affiliation Requests", subtitle: "Approve or reject doctor affiliations", icon: "git-network-outline", screen: "AdminAffiliationRequests" },
         { title: "Manage Patients", subtitle: "View & remove patients", icon: "people-outline", screen: "AdminPatients" },
         { title: "Manage Hospitals", subtitle: "Add or remove hospitals", icon: "business-outline", screen: "AdminHospitals" },
     ];
@@ -67,11 +68,11 @@ const AdminDashboard = () => {
         >
             <Ionicons name={icon} size={24} color={iconColor} />
             <View style={styles.statTextContainer}>
-                <Text style={styles.statTitle}>{title}</Text>
+                <Text style={styles.statTitle} numberOfLines={2}>{title}</Text>
                 {loading ? (
                     <ActivityIndicator size="small" color={iconColor} style={{ marginTop: 4 }} />
                 ) : (
-                    <Text style={styles.statValue}>{value}</Text>
+                    <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
                 )}
             </View>
         </TouchableOpacity>
@@ -147,10 +148,10 @@ const styles = StyleSheet.create({
     },
     statCard: {
         flex: 1,
-        padding: 16,
+        padding: 12,
         borderRadius: 16,
         justifyContent: "space-between",
-        aspectRatio: 1,
+        minHeight: 110,
     },
     statTextContainer: { marginTop: 12 },
     statTitle: {

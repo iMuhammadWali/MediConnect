@@ -4,9 +4,9 @@ import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from "react";
 import { ref, onValue, update } from "firebase/database";
-import { database, auth } from "../config/firebase";
+import { database, auth } from "../../config/firebase";
 
-const SchedulesPage = () => {
+const AppointmentsPage = () => {
     const navigation = useNavigation();
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -95,7 +95,7 @@ const SchedulesPage = () => {
                     <View style={styles.appointmentInfo}>
                         <Text style={styles.doctorName}>{item.doctorName}</Text>
                         <Text style={styles.doctorDetails}>
-                            Specialist • <Text style={styles.hospitalName}>Clinic</Text>
+                            Specialist • <Text style={styles.hospitalName}>{item.hospital || "Hospital"}</Text>
                         </Text>
                         <View style={styles.statusBadge}>
                             <Text style={[styles.statusText, { color: statusStyle.color, backgroundColor: statusStyle.bgColor }]}>
@@ -131,15 +131,7 @@ const SchedulesPage = () => {
                 style={styles.scrollView}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}>
-                
-                {/* Mobile Header */}
-                <View style={styles.mobileHeader}>
-                    <Text style={styles.headerTitle}>Schedules</Text>
-                    <View style={styles.userAvatar}>
-                        <Text style={styles.userInitials}>JD</Text>
-                    </View>
-                </View>
-
+            
                 {/* Search Bar */}
                 <View style={styles.searchContainer}>
                     <Ionicons name="search" size={20} color="#747686" style={styles.searchIcon} />
@@ -164,7 +156,7 @@ const SchedulesPage = () => {
 
                 {loading ? <ActivityIndicator size="large" color="#1a40c2" style={{marginTop: 20}} /> :
                     filteredAppointments.length === 0 ? (
-                        <Text style={{textAlign: "center", color: "#747686", marginTop: 40}}>No appointments found.</Text>
+                        <Text style={{textAlign: "center", color: "#747686", marginTop: 40}}>No schedule found.</Text>
                     ) :
                     <FlatList
                         data={filteredAppointments}
@@ -359,4 +351,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default SchedulesPage;
+export default AppointmentsPage;

@@ -1,10 +1,10 @@
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert } from "react-native";
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState, useRef } from "react";
 import { ref, onValue, push, set } from "firebase/database";
-import { database, auth } from "../config/firebase";
+import { database, auth } from "../../config/firebase";
 
 const ChatPage = () => {
     const navigation = useNavigation();
@@ -12,22 +12,25 @@ const ChatPage = () => {
     const { otherUid, otherName } = route.params || {};
     const [messages, setMessages] = useState([]);
     const [text, setText] = useState("");
-    const scrollViewRef = useRef();
+    const flatListRef = useRef();
 
     const currentUid = auth.currentUser?.uid;
-    // ensure consistent chat id
-    const chatId = currentUid && otherUid ? (currentUid < otherUid ? `${currentUid}_${otherUid}` : `${otherUid}_${currentUid}`) : null;
+    const chatId = currentUid && otherUid
+        ? (currentUid < otherUid ? `${currentUid}_${otherUid}` : `${otherUid}_${currentUid}`)
+        : null;
 
     useEffect(() => {
         if (!chatId) return;
         const msgRef = ref(database, `chats/${chatId}/messages`);
         const unsub = onValue(msgRef, snapshot => {
-            const msgs = [];
-            if (snapshot.exists()) {
-                snapshot.forEach(c => msgs.push({ id: c.key, ...c.val() }));
+            const data = snapshot.val();
+            if (!data) {
+                setMessages([]);
+                return;
             }
+            const msgs = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+            msgs.sort((a, b) => a.timestamp - b.timestamp);
             setMessages(msgs);
-            setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
         });
         return unsub;
     }, [chatId]);
@@ -35,12 +38,12 @@ const ChatPage = () => {
     const handleSend = async () => {
         if (!text.trim()) return;
         const msgText = text.trim();
-        setText(""); // Optimistically clear input
-        
+        setText("");
+
         try {
-            if (!chatId) throw new Error("Chat connection is not established (missing IDs).");
+            if (!chatId) throw new Error("Chat connection is not established.");
             if (!currentUid) throw new Error("You must be logged in to send messages.");
-            
+
             const msgRef = ref(database, `chats/${chatId}/messages`);
             const newMsgRef = push(msgRef);
             await set(newMsgRef, {
@@ -49,9 +52,20 @@ const ChatPage = () => {
                 timestamp: Date.now()
             });
         } catch (error) {
-            setText(msgText); // Restore input text
+            setText(msgText);
             Alert.alert("Failed to send message", error.message);
         }
+    };
+
+    const renderMessage = ({ item: m }) => {
+        const isMe = m.senderId === currentUid;
+        return (
+            <View style={[styles.messageBubble, isMe ? styles.myMessage : styles.otherMessage]}>
+                <Text style={[styles.messageText, isMe ? styles.myMessageText : styles.otherMessageText]}>
+                    {m.text}
+                </Text>
+            </View>
+        );
     };
 
     return (
@@ -62,29 +76,31 @@ const ChatPage = () => {
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>{otherName || "Chat"}</Text>
             </View>
-            <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-                <ScrollView 
-                    ref={scrollViewRef} 
-                    style={styles.messagesContainer} 
-                    contentContainerStyle={{ padding: 16, gap: 12 }}
-                    keyboardShouldPersistTaps="handled"
-                >
-                    {messages.length === 0 ? (
-                        <Text style={styles.emptyText}>No messages yet. Say hi!</Text>
-                    ) : messages.map(m => {
-                        const isMe = m.senderId === currentUid;
-                        return (
-                            <View key={m.id} style={[styles.messageBubble, isMe ? styles.myMessage : styles.otherMessage]}>
-                                <Text style={[styles.messageText, isMe ? styles.myMessageText : styles.otherMessageText]}>{m.text}</Text>
-                            </View>
-                        );
-                    })}
-                </ScrollView>
+            <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+                <FlatList
+                    ref={flatListRef}
+                    data={[...messages].reverse()}
+                    inverted
+                    keyExtractor={m => m.id}
+                    renderItem={renderMessage}
+                    contentContainerStyle={styles.messagesContent}
+                    ListEmptyComponent={
+                        <Text style={styles.emptyText}>No messages yet. Start a conversation.</Text>
+                    }
+                />
                 <View style={styles.inputContainer}>
-                    <TextInput style={styles.input} value={text} onChangeText={setText} placeholder="Type a message..." />
-                    <TouchableOpacity 
-                        style={[styles.sendButton, text.trim().length === 0 && {opacity: 0.5}]} 
+                    <TextInput
+                        style={styles.input}
+                        value={text}
+                        onChangeText={setText}
+                        placeholder="Type a message..."
+                        placeholderTextColor="#c4c5d6"
+                        multiline
+                    />
+                    <TouchableOpacity
+                        style={[styles.sendButton, !text.trim() && { opacity: 0.5 }]}
                         onPress={handleSend}
+                        disabled={!text.trim()}
                     >
                         <Ionicons name="send" size={20} color="#fff" />
                     </TouchableOpacity>
@@ -115,7 +131,7 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
     headerTitle: { fontSize: 18, fontWeight: "bold", color: "#ffffff" },
-    messagesContainer: { flex: 1 },
+    messagesContent: { padding: 16, gap: 12 },
     emptyText: { textAlign: "center", color: "#717273", marginTop: 20 },
     messageBubble: { maxWidth: "80%", padding: 12, borderRadius: 16 },
     myMessage: { alignSelf: "flex-end", backgroundColor: "#1a40c2", borderBottomRightRadius: 4 },
@@ -123,9 +139,30 @@ const styles = StyleSheet.create({
     messageText: { fontSize: 15 },
     myMessageText: { color: "#fff" },
     otherMessageText: { color: "#191c1e" },
-    inputContainer: { flexDirection: "row", padding: 16, gap: 12, backgroundColor: "#fff", alignItems: "center" },
-    input: { flex: 1, backgroundColor: "#f0f2f5", borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10, fontSize: 15 },
-    sendButton: { backgroundColor: "#1a40c2", width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" }
+    inputContainer: {
+        flexDirection: "row",
+        padding: 16,
+        gap: 12,
+        backgroundColor: "#fff",
+        alignItems: "center",
+    },
+    input: {
+        flex: 1,
+        backgroundColor: "#f0f2f5",
+        borderRadius: 20,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        fontSize: 15,
+        maxHeight: 100,
+    },
+    sendButton: {
+        backgroundColor: "#1a40c2",
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: "center",
+        justifyContent: "center",
+    }
 });
 
 export default ChatPage;
