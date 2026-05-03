@@ -2,9 +2,9 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { ref, set } from "firebase/database";
+import { ref, set, onValue } from "firebase/database";
 import { auth, database } from "../config/firebase";
 import { FormInput } from "../components/FormInput";
 import { FormDropdown } from "../components/FormDropdown";
@@ -15,6 +15,22 @@ const SignUpPage = () => {
     const navigation = useNavigation();
     const [loading, setLoading] = useState(false);
     const [userRole, setUserRole] = useState("patient");
+    const [hospitals, setHospitals] = useState([]);
+
+    useEffect(() => {
+        const hRef = ref(database, "hospitals");
+        const unsub = onValue(hRef, snapshot => {
+            const res = [];
+            if (snapshot.exists()) {
+                snapshot.forEach(child => {
+                    const hospital = child.val();
+                    if (hospital.name) res.push(hospital.name);
+                });
+            }
+            setHospitals(res);
+        });
+        return unsub;
+    }, []);
     
     // Common fields
     const [fullName, setFullName] = useState("");
@@ -263,7 +279,16 @@ const SignUpPage = () => {
                                     />
                                     
                                     <FormInput label="Medical License Number" icon="card-outline" placeholder="License Number" value={medicalLicense} onChangeText={setMedicalLicense} required />
-                                    <FormInput label="Hospital/Clinic Affiliation" icon="business-outline" placeholder="Hospital Name" value={hospitalAffiliation} onChangeText={setHospitalAffiliation} required />
+                                    
+                                    <FormDropdown 
+                                        label="Hospital/Clinic Affiliation" 
+                                        icon="business-outline" 
+                                        placeholder="Select Hospital" 
+                                        value={hospitalAffiliation} 
+                                        onSelect={setHospitalAffiliation} 
+                                        options={hospitals} 
+                                        required 
+                                    />
                                     
                                     <View style={styles.rowContainer}>
                                         <View style={{ flex: 1 }}>
