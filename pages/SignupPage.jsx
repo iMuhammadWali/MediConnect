@@ -153,48 +153,57 @@ const SignUpPage = () => {
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
-            await updateProfile(user, { displayName: fullName });
-            await user.reload();
-            const userData = {
-                role: userRole,
-                fullName,
-                email,
-                phone,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-            }
-            let doctorData = null;
-            if (userRole === "doctor"){
-                doctorData = {
-                    fullName,
-                    phone,
-                    specializations: selectedSpecializations,
-                    primarySpecialization: selectedSpecializations[0] || "",
-                    languages: selectedLanguages,
-                    medicalLicense,
-                    hospitalAffiliation,
-                    experience: parseInt(experience),
-                    consultationFee: parseInt(consultationFee),
-                    bio,
-                    workingDays,
-                    startTime: startTime || "09:00 AM",
-                    endTime: endTime || "05:00 PM",
-                    education,
-                    services,
-                    // Admin must verify doctor
-                    isVerified: false,
-                    rating: 0,
-                    totalRatings: 0,
-                    patientsCount: 0
-                }
-                await set(ref(database, `doctors/${user.uid}`), doctorData);
-            }
-            const userRef = ref(database, `users/${user.uid}`);
-            await set(userRef, userData);
             
-            Alert.alert("Success", userRole === "doctor" 
-                ? "Doctor account created! Pending admin verification." 
-                : "Account created successfully!");
+            try {
+                await updateProfile(user, { displayName: fullName });
+                await user.reload();
+                
+                const userData = {
+                    role: userRole,
+                    fullName,
+                    email,
+                    phone,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                };
+                
+                let doctorData = null;
+                if (userRole === "doctor"){
+                    doctorData = {
+                        fullName,
+                        phone,
+                        specializations: selectedSpecializations,
+                        primarySpecialization: selectedSpecializations[0] || "",
+                        languages: selectedLanguages,
+                        medicalLicense,
+                        hospitalAffiliation,
+                        experience: parseInt(experience),
+                        consultationFee: parseInt(consultationFee),
+                        bio,
+                        workingDays,
+                        startTime: startTime || "09:00 AM",
+                        endTime: endTime || "05:00 PM",
+                        education,
+                        services,
+                        isVerified: false,
+                        rating: 0,
+                        totalRatings: 0,
+                        patientsCount: 0
+                    };
+                    await set(ref(database, `doctors/${user.uid}`), doctorData);
+                }
+                
+                const userRef = ref(database, `users/${user.uid}`);
+                await set(userRef, userData);
+                
+                Alert.alert("Success", userRole === "doctor" 
+                    ? "Doctor account created! Pending admin verification." 
+                    : "Account created successfully!");
+            } catch (dbError) {
+                // Critical Fix: If database write fails, delete the auth user to prevent orphaned accounts
+                await user.delete().catch(() => {}); // ignore delete errors
+                throw new Error("Failed to save profile. Please check your connection and try again.");
+            }
 
         } catch (error) {
             const errorMessages = {

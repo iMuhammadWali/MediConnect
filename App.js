@@ -241,7 +241,7 @@ export default function App() {
 
   return (
     <NavigationContainer>
-      {!user ? (
+      {!user || !role ? (
         <AuthStack />
       ) : role === "patient" ? (
         <PatientStack />
