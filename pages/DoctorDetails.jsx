@@ -3,8 +3,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from "react";
-import { ref, push, set } from "firebase/database";
+import { ref, push, set, onValue } from "firebase/database";
 import { database, auth } from "../config/firebase";
+import { useEffect } from "react";
 
 const DoctorDetailsPage = () => {
     const navigation = useNavigation();
@@ -15,23 +16,49 @@ const DoctorDetailsPage = () => {
     const [selectedTime, setSelectedTime] = useState(null);
     const [loading, setLoading] = useState(false);
 
-    // This component should have a doctor object passed to it as a prop
-    const stats = [
-        { id: 1, value: "20 yrs", label: "Experience" },
-        { id: 2, value: "1000+", label: "Patients" },
-        { id: 3, value: "5.0", label: "Rating", hasStar: true },
-    ];
+    const [doctor, setDoctor] = useState(null);
 
+    useEffect(() => {
+        if (!doctorId) return;
+        const unsub = onValue(ref(database, `doctors/${doctorId}`), snapshot => {
+            if (snapshot.exists()) {
+                setDoctor(snapshot.val());
+            }
+        });
+        return unsub;
+    }, [doctorId]);
 
-    // And all this data should be retrieved from database.
+    const getInitials = (fullName) => {
+        if (!fullName) return "DR";
+        const names = fullName.split(" ");
+        if (names.length === 1) return names[0].charAt(0).toUpperCase();
+        return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
+    };
 
-    const dates = [
-        { id: 1, day: "Mon", date: "11", isActive: false },
-        { id: 2, day: "Tue", date: "12", isActive: true },
-        { id: 3, day: "Wed", date: "13", isActive: false },
-        { id: 4, day: "Thu", date: "14", isActive: false },
-        { id: 5, day: "Fri", date: "15", isActive: false },
-    ];
+    const stats = doctor ? [
+        { id: 1, value: `${doctor.experience || 0} yrs`, label: "Experience" },
+        { id: 2, value: `${doctor.patientsCount || 0}+`, label: "Patients" },
+        { id: 3, value: `${doctor.rating || 0}`, label: "Rating", hasStar: true },
+    ] : [];
+
+    const generateDates = () => {
+        const result = [];
+        const today = new Date();
+        const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        for(let i=0; i<5; i++) {
+            const d = new Date(today);
+            d.setDate(today.getDate() + i);
+            result.push({
+                id: i,
+                day: days[d.getDay()],
+                date: d.getDate().toString(),
+                fullDate: d,
+            });
+        }
+        return result;
+    };
+    
+    const dates = generateDates();
 
 
     const timeSlots = [
@@ -99,12 +126,17 @@ const DoctorDetailsPage = () => {
         }
         setLoading(true);
         try {
+            const selectedFullDate = dates.find(d => d.date === selectedDate)?.fullDate;
+            const dateStr = selectedFullDate 
+                ? selectedFullDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) 
+                : `Date: ${selectedDate}`;
+
             const newRef = push(ref(database, "appointments"));
             await set(newRef, {
                 patientId: auth.currentUser?.uid,
                 doctorId: doctorId || "unknown_doctor",
-                doctorName: "Dr. Sarah Ahmed", // Default fallback
-                date: `Sep ${selectedDate}, 2023`,
+                doctorName: doctor?.fullName || "Dr. Unknown",
+                date: dateStr,
                 time: selectedTime,
                 status: "Upcoming",
                 createdAt: new Date().toISOString()
@@ -142,10 +174,10 @@ const DoctorDetailsPage = () => {
                     {/* Doctor Identity */}
                     <View style={styles.doctorIdentity}>
                         <View style={styles.doctorAvatar}>
-                            <Text style={styles.doctorInitials}>SA</Text>
+                            <Text style={styles.doctorInitials}>{getInitials(doctor?.fullName)}</Text>
                         </View>
-                        <Text style={styles.doctorName}>Dr. Sarah Ahmed</Text>
-                        <Text style={styles.doctorSpecialty}>Cardiologist</Text>
+                        <Text style={styles.doctorName}>{doctor?.fullName || "Loading..."}</Text>
+                        <Text style={styles.doctorSpecialty}>{doctor?.primarySpecialization || "Specialty"}</Text>
                     </View>
                 </View>
 
@@ -165,9 +197,7 @@ const DoctorDetailsPage = () => {
                     <View style={styles.aboutSection}>
                         <Text style={styles.sectionTitle}>About Doctor</Text>
                         <Text style={styles.aboutText}>
-                            Dr. Sarah Ahmed is a highly respected Cardiologist with over two decades of clinical experience. She specializes in advanced heart failure management and preventive...
-                            <Text style={styles.readMore}> Read More</Text> 
-                            {/* I should make the Read More functional. */}
+                            {doctor?.bio || "No biography provided by the doctor."}
                         </Text>
                     </View>
 
@@ -175,7 +205,7 @@ const DoctorDetailsPage = () => {
                     <View style={styles.selectionSection}>
                         <View style={styles.sectionHeader}>
                             <Text style={styles.sectionTitle}>Date</Text>
-                            <Text style={styles.sectionSubtitle}>September 2023</Text>
+                            <Text style={styles.sectionSubtitle}>Upcoming Days</Text>
                         </View>
                         <FlatList
                             data={dates}

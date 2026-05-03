@@ -29,6 +29,7 @@ import AdminDoctorsPage from "./pages/admin/AdminDoctorsPage";
 import AdminPatientsPage from "./pages/admin/AdminPatientsPage";
 import AdminDoctorEditPage from "./pages/admin/AdminDoctorEditPage";
 import AdminAddHospitalPage from "./pages/admin/AdminAddHospitalPage";
+import AdminHospitalsPage from "./pages/admin/AdminHospitalsPage";
 
 import RadiologyPage from "./pages/RadiologyPage";
 import HospitalsPage from "./pages/HospitalsPage";
@@ -172,6 +173,7 @@ function AdminStack() {
       <Stack.Screen name="AdminDoctors" component={AdminDoctorsPage} />
       <Stack.Screen name="AdminPatients" component={AdminPatientsPage} />
       <Stack.Screen name="AdminDoctorEdit" component={AdminDoctorEditPage} />
+      <Stack.Screen name="AdminHospitals" component={AdminHospitalsPage} />
       <Stack.Screen name="AdminAddHospital" component={AdminAddHospitalPage} />
     </Stack.Navigator>
   );
