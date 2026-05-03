@@ -22,21 +22,6 @@ const EmergencyPage = () => {
         );
     };
 
-    const handleShareLocation = () => {
-        Alert.alert(
-            "Share Location",
-            "This will share your current GPS location with emergency contacts",
-            [
-                { text: "Cancel", style: "cancel" },
-                { text: "Share", onPress: () => {
-                    // Implement location sharing logic here
-                    Alert.alert("Success", "Location shared with emergency contacts");
-                }}
-            ]
-        );
-    };
-
-    // This could have also been made reusable.
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView 

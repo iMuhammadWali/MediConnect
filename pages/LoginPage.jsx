@@ -22,6 +22,7 @@ const LoginPage = () => {
         return subscriber;
     }, []);
 
+    // TODO: Add meaningful error messages. (How to control visibility in React Native?)
     const handleLogin = async () => {
         if (!email || !password) {
             Alert.alert("Error", "Please fill in all fields");

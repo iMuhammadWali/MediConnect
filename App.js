@@ -240,9 +240,9 @@ export default function App() {
         <PatientStack />
       ) : role === "admin" ? (
         <AdminStack />
-      ) : (
+      ) : role === "doctor" ? (
         <DoctorStack />
-      )}
+      ) : null}
     </NavigationContainer>
   );
 }

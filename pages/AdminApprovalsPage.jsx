@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { ref, get, update } from "firebase/database";
 import { database } from "../config/firebase";
 
+// This page is yet to be reviewed (and possibly be removen because Ahmed created Admin pages.).
+
 const AdminApprovalsPage = () => {
     const navigation = useNavigation();
     const [activeTab, setActiveTab] = useState("pending");
