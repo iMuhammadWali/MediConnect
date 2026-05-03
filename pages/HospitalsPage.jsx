@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, ToastAndroid } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,16 +14,19 @@ const HospitalsPage = () => {
     const [searchQuery, setSearchQuery] = useState("");
 
     useEffect(() => {
-        const hRef = ref(database, "hospitals");
-        const unsub = onValue(hRef, snapshot => {
-            const res = [];
-            if (snapshot.exists()) {
-                snapshot.forEach(child => res.push({ id: child.key, ...child.val() }));
+        const hospitalsRef = ref(database, "hospitals");
+        const unsubscribe = onValue(hospitalsRef, snapshot => {
+            const data = snapshot.val();
+            if (!data){
+                setHospitals([]);
+                setLoading(false);
+                return;
             }
+            const res = Object.keys(data).map(key => ({ id: key, ...data[key] }));
             setHospitals(res);
             setLoading(false);
         });
-        return unsub;
+        return unsubscribe;
     }, []);
 
     const filteredHospitals = hospitals.filter(h => 
