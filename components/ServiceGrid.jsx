@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, FlatList, StyleSheet } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 
-export const ServiceGrid = ({ services, onServicePress, columns = 4, customColors = {} }) => {
+export const ServiceGrid = ({ services, onServicePress, columns = 3, customColors = {} }) => {
     const renderServiceItem = ({ item }) => (
         <TouchableOpacity 
             style={styles.serviceItem}
