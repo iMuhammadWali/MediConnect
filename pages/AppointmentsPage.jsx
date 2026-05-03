@@ -132,14 +132,6 @@ const AppointmentsPage = () => {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}>
                 
-                {/* Mobile Header */}
-                <View style={styles.mobileHeader}>
-                    <Text style={styles.headerTitle}>Appointments</Text>
-                    <View style={styles.userAvatar}>
-                        <Text style={styles.userInitials}>PA</Text>
-                    </View>
-                </View>
-
                 {/* Search Bar */}
                 <View style={styles.searchContainer}>
                     <Ionicons name="search" size={20} color="#747686" style={styles.searchIcon} />

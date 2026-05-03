@@ -49,6 +49,8 @@ function PatientTabs() {
     <Tab.Navigator
       screenOptions={{
         // headerShown: false,
+        headerTitleAlign: "center",
+        headerTitleStyle: {fontSize: 18}
       }}
     >
       <Tab.Screen
@@ -66,13 +68,14 @@ function PatientTabs() {
         name="Appointments"
         component={AppointmentsPage}
         options={{
+          // headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="list-outline" size={size} color={color} />
           ),
         }}
       />
 
-      <Tab.Screen
+      {/* <Tab.Screen
         name="Scheduler"
         component={SchedulerPage}
         options={{
@@ -80,7 +83,7 @@ function PatientTabs() {
             <Ionicons name="calendar-outline" size={size} color={color} />
           ),
         }}
-      />
+      /> */}
 
       <Tab.Screen
         name="Messages"

@@ -30,9 +30,6 @@ const MessagesPage = () => {
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>Messages</Text>
-            </View>
             <ScrollView style={styles.content} contentContainerStyle={{padding: 20, gap: 12}}>
                 {loading ? <ActivityIndicator size="large" color="#1a40c2" /> :
                     users.length === 0 ? (
