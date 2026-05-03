@@ -3,7 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from '@expo/vector-icons';
 import { use, useEffect, useState } from "react";
-import { database } from "../config/firebase";
+import { database } from "../../config/firebase";
 import { get, ref } from "firebase/database";
 
 const FindDoctorsPage = () => {

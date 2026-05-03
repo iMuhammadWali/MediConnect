@@ -4,7 +4,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from "react";
 import { ref, push, set, onValue } from "firebase/database";
-import { database, auth } from "../config/firebase";
+import { database, auth } from "../../config/firebase";
 import { useEffect } from "react";
 
 const DoctorDetailsPage = () => {

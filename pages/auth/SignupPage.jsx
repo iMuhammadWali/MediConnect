@@ -5,11 +5,11 @@ import { useNavigation } from "@react-navigation/native";
 import { useState, useEffect } from "react";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { ref, set, onValue } from "firebase/database";
-import { auth, database } from "../config/firebase";
-import { FormInput } from "../components/FormInput";
-import { FormDropdown } from "../components/FormDropdown";
-import { DayPicker } from "../components/DayPicker";
-import { SectionDivider } from "../components/SectionDivider";
+import { auth, database } from "../../config/firebase";
+import { FormInput } from "../../components/FormInput";
+import { FormDropdown } from "../../components/FormDropdown";
+import { DayPicker } from "../../components/DayPicker";
+import { SectionDivider } from "../../components/SectionDivider";
 
 const SignUpPage = () => {
     const navigation = useNavigation();
