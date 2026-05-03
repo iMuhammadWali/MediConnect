@@ -39,6 +39,7 @@ import { BloodBankPage } from "./pages/ComingSoonPages";
 import PrescriptionPage from "./pages/PrescriptionPage";
 import ChatPage from "./pages/ChatPage";
 import PatientDetailsPage from "./pages/PatientDetailsPage";
+import DoctorAffiliationsPage from "./pages/DoctorAffiliationsPage";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -175,6 +176,7 @@ function DoctorStack() {
       <Stack.Screen name="DoctorTabs" component={DoctorTabs} />
       <Stack.Screen name="ChatPage" component={ChatPage} />
       <Stack.Screen name="PatientDetails" component={PatientDetailsPage} />
+      <Stack.Screen name="DoctorAffiliations" component={DoctorAffiliationsPage} />
     </Stack.Navigator>
   );
 }

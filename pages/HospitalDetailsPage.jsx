@@ -26,7 +26,7 @@ const HospitalDetailsPage = () => {
             if (snapshot.exists()) {
                 snapshot.forEach(c => {
                     const data = c.val();
-                    if (data.isVerified && data.hospitalAffiliation === hospital.name) {
+                    if (data.isVerified && (data.hospitalAffiliation === hospital.name || (data.affiliations && data.affiliations.includes(hospital.name)))) {
                         res.push({ id: c.key, ...data });
                     }
                 });

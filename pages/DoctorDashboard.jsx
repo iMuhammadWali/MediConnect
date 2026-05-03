@@ -116,6 +116,17 @@ const DoctorDashboardPage = () => {
                     ))}
                 </View>
 
+                {/* Quick Actions Section */}
+                <View style={styles.quickActionsSection}>
+                    <TouchableOpacity 
+                        style={styles.quickActionButton}
+                        onPress={() => navigation.navigate("DoctorAffiliations")}
+                    >
+                        <Ionicons name="business" size={24} color="#1a40c2" />
+                        <Text style={styles.quickActionText}>Manage Affiliations</Text>
+                    </TouchableOpacity>
+                </View>
+
                 {/* Today's Schedule Section */}
                 <View style={styles.scheduleSection}>
                     <View style={styles.scheduleHeader}>
@@ -196,6 +207,28 @@ const styles = StyleSheet.create({
     scheduleSection: {
         marginTop: 24,
         paddingHorizontal: 20,
+    },
+    quickActionsSection: {
+        paddingHorizontal: 20,
+        marginTop: 16,
+    },
+    quickActionButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#ffffff",
+        padding: 16,
+        borderRadius: 16,
+        gap: 12,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.02,
+        shadowRadius: 12,
+        elevation: 1,
+    },
+    quickActionText: {
+        fontSize: 16,
+        fontWeight: "bold",
+        color: "#191c1e",
     },
     scheduleHeader: {
         flexDirection: "row",

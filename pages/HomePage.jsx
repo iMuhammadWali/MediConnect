@@ -95,7 +95,7 @@ const HomePage = () => {
             <TopBar userName={displayName} avatarText="A" />
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 <SearchBar 
-                    placeholder="Find doctor, clinic, or health issue" 
+                    placeholder="Find doctor, hospital, or health issue" 
                     value={searchQuery}
                     onChangeText={setSearchQuery}
                 />

@@ -31,9 +31,6 @@ const AdminDoctorEditPage = () => {
     const [experience, setExperience] = useState("");
     const [consultationFee, setConsultationFee] = useState("");
     const [bio, setBio] = useState("");
-    const [clinicAddress, setClinicAddress] = useState("");
-    const [clinicCity, setClinicCity] = useState("");
-    const [clinicPhone, setClinicPhone] = useState("");
     const [startTime, setStartTime] = useState("");
     const [endTime, setEndTime] = useState("");
     const [education, setEducation] = useState("");
@@ -114,9 +111,6 @@ const AdminDoctorEditPage = () => {
                 setExperience(d.experience !== undefined ? String(d.experience) : "");
                 setConsultationFee(d.consultationFee !== undefined ? String(d.consultationFee) : "");
                 setBio(d.bio || "");
-                setClinicAddress(d.clinicAddress || "");
-                setClinicCity(d.clinicCity || "");
-                setClinicPhone(d.clinicPhone || "");
                 setStartTime(d.startTime || "");
                 setEndTime(d.endTime || "");
                 setEducation(d.education || "");
@@ -158,9 +152,6 @@ const AdminDoctorEditPage = () => {
                 experience: expNum,
                 consultationFee: feeNum,
                 bio,
-                clinicAddress,
-                clinicCity,
-                clinicPhone,
                 startTime,
                 endTime,
                 education,
@@ -288,18 +279,7 @@ const AdminDoctorEditPage = () => {
 
                         <FormInput label="Education" icon="school-outline" placeholder="MBBS, FCPS, etc." value={education} onChangeText={setEducation} />
 
-                        <SectionDivider title="Clinic Information" />
-
-                        <FormInput label="Clinic Address" icon="location-outline" placeholder="Full clinic address" value={clinicAddress} onChangeText={setClinicAddress} multiline />
-
-                        <View style={styles.rowContainer}>
-                            <View style={{ flex: 1 }}>
-                                <FormInput label="City" icon="location-outline" placeholder="Karachi" value={clinicCity} onChangeText={setClinicCity} />
-                            </View>
-                            <View style={{ flex: 1 }}>
-                                <FormInput label="Clinic Phone" icon="call-outline" placeholder="Clinic phone" value={clinicPhone} onChangeText={setClinicPhone} keyboardType="phone-pad" />
-                            </View>
-                        </View>
+                        <SectionDivider title="Schedule & About" />
 
                         <DayPicker selectedDays={workingDays} onToggleDay={toggleWorkingDay} label="Working Days" />
 
@@ -311,8 +291,6 @@ const AdminDoctorEditPage = () => {
                                 <FormInput label="End Time" icon="time-outline" placeholder="05:00 PM" value={endTime} onChangeText={setEndTime} />
                             </View>
                         </View>
-
-                        <SectionDivider title="About" />
 
                         <FormInput label="Services Offered" icon="list-outline" placeholder="Heart Checkup, ECG, Surgery" value={services} onChangeText={setServices} multiline />
                         <FormInput label="Bio / Introduction" icon="document-text-outline" placeholder="Brief introduction" value={bio} onChangeText={setBio} multiline />

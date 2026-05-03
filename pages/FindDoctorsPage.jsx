@@ -60,7 +60,7 @@ const FindDoctorsPage = () => {
                         initials: getInitials(doctor.fullName),
                         name: doctor.fullName,
                         primarySpecialization: doctor.primarySpecialization,
-                        clinic: doctor.clinicAddress,
+                        hospitalAffiliation: doctor.hospitalAffiliation,
                         rating: doctor.rating,
                         bgColor: getBgColor(doctor.primarySpecialization),
                         textColor: "#ffffff",
@@ -97,7 +97,7 @@ const FindDoctorsPage = () => {
             <View style={styles.doctorInfo}>
                 <Text style={styles.doctorName} numberOfLines={1}>{item.name}</Text>
                 <Text style={styles.doctorDetails} numberOfLines={1}>
-                    {item.specialty} • {item.clinic}
+                    {item.specialty} • {item.hospitalAffiliation}
                 </Text>
                 <View style={styles.ratingContainer}>
                     <Ionicons name="star" size={14} color="#F39C12" />
@@ -124,7 +124,7 @@ const FindDoctorsPage = () => {
                     <Ionicons name="search" size={20} color="#747686" style={styles.searchIcon} />
                     <TextInput
                         style={styles.searchInput}
-                        placeholder="Search doctors, clinics..."
+                        placeholder="Search doctors, hospitals..."
                         placeholderTextColor="#747686"
                     />
                 </View>

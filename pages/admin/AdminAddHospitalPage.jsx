@@ -3,7 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { ref, push, set } from "firebase/database";
+import { ref, push, set, get } from "firebase/database";
 import { database } from "../../config/firebase";
 import { FormInput } from "../../components/FormInput";
 
@@ -26,7 +26,7 @@ const AdminAddHospitalPage = () => {
         setSearching(true);
         try {
             const res = await fetch(
-                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`,
+                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&countrycodes=PK`,
                 {
                     headers: {
                         'User-Agent': 'MediConnect/1.0',
@@ -50,9 +50,29 @@ const AdminAddHospitalPage = () => {
         }
         setLoading(true);
         try {
+            // Fetch existing hospitals to check for duplicates
+            const hospitalsRef = ref(database, "hospitals");
+            const snapshot = await get(hospitalsRef);
+            let isDuplicate = false;
+            
+            if (snapshot.exists()) {
+                snapshot.forEach(child => {
+                    const existingName = child.val().name;
+                    if (existingName && existingName.toLowerCase() === name.trim().toLowerCase()) {
+                        isDuplicate = true;
+                    }
+                });
+            }
+            
+            if (isDuplicate) {
+                Alert.alert("Error", "A hospital with this name already exists.");
+                setLoading(false);
+                return;
+            }
+
             const newRef = push(ref(database, "hospitals"));
             await set(newRef, {
-                name,
+                name: name.trim(),
                 address,
                 phone,
                 latitude,

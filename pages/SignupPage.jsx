@@ -49,9 +49,6 @@ const SignUpPage = () => {
     const [experience, setExperience] = useState("");
     const [consultationFee, setConsultationFee] = useState("");
     const [bio, setBio] = useState("");
-    const [clinicAddress, setClinicAddress] = useState("");
-    const [clinicCity, setClinicCity] = useState("");
-    const [clinicPhone, setClinicPhone] = useState("");
     const [workingDays, setWorkingDays] = useState([]);
     const [startTime, setStartTime] = useState("");
     const [endTime, setEndTime] = useState("");
@@ -179,16 +176,13 @@ const SignUpPage = () => {
                     experience: parseInt(experience),
                     consultationFee: parseInt(consultationFee),
                     bio,
-                    clinicAddress,
-                    clinicCity,
-                    clinicPhone,
                     workingDays,
                     startTime: startTime || "09:00 AM",
                     endTime: endTime || "05:00 PM",
                     education,
                     services,
-                    // Show to patient only when isVerified equals true.
-                    isVerified: true,
+                    // Admin must verify doctor
+                    isVerified: false,
                     rating: 0,
                     totalRatings: 0,
                     patientsCount: 0
@@ -300,16 +294,6 @@ const SignUpPage = () => {
                                     </View>
                                     
                                     <FormInput label="Education" icon="school-outline" placeholder="MBBS, FCPS, etc." value={education} onChangeText={setEducation} />
-                                    <FormInput label="Clinic Address" icon="location-outline" placeholder="Full clinic address" value={clinicAddress} onChangeText={setClinicAddress} multiline />
-                                    
-                                    <View style={styles.rowContainer}>
-                                        <View style={{ flex: 1 }}>
-                                            <FormInput label="City" icon="location-outline" placeholder="Karachi" value={clinicCity} onChangeText={setClinicCity} />
-                                        </View>
-                                        <View style={{ flex: 1 }}>
-                                            <FormInput label="Clinic Phone" icon="call-outline" placeholder="Clinic phone" value={clinicPhone} onChangeText={setClinicPhone} keyboardType="phone-pad" />
-                                        </View>
-                                    </View>
                                     
                                     <DayPicker selectedDays={workingDays} onToggleDay={toggleWorkingDay} label="Working Days" />
                                     
