@@ -66,8 +66,8 @@ const DoctorDashboardPage = () => {
         <View style={[styles.statCard, { backgroundColor: color }]}>
             <Ionicons name={icon} size={24} color={iconColor} />
             <View style={styles.statTextContainer}>
-                <Text style={styles.statTitle}>{title}</Text>
-                <Text style={styles.statValue}>{value}</Text>
+                <Text style={styles.statTitle} numberOfLines={2}>{title}</Text>
+                <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
             </View>
         </View>
     );
@@ -183,10 +183,10 @@ const styles = StyleSheet.create({
     statCard: {
         flex: 1,
         backgroundColor: "#E6F1FB",
-        padding: 16,
+        padding: 12,
         borderRadius: 16,
         justifyContent: "space-between",
-        aspectRatio: 1,
+        minHeight: 110,
     },
     statTextContainer: {
         marginTop: 12,

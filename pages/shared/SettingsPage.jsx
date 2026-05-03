@@ -9,8 +9,6 @@ import { ref, onValue } from "firebase/database";
 
 const SettingsPage = () => {
     const navigation = useNavigation();
-    const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-    const [darkModeEnabled, setDarkModeEnabled] = useState(false);
     const [userData, setUserData] = useState(null);
 
     useEffect(() => {
@@ -106,43 +104,9 @@ const SettingsPage = () => {
                     </View>
                 </View>
 
-                {/* Account Settings */}
-                <SettingsSection title="Account">
-                    <SettingItem 
-                        icon="person-outline" 
-                        title="Personal Information" 
-                        onPress={() => Alert.alert("Coming Soon", "Edit profile will be available soon.")} 
-                    />
-                    <SettingItem 
-                        icon="lock-closed-outline" 
-                        title="Security & Password" 
-                        onPress={() => Alert.alert("Coming Soon", "Password management will be available soon.")} 
-                    />
-                </SettingsSection>
 
-                {/* Preferences */}
-                <SettingsSection title="Preferences">
-                    <SettingItem 
-                        icon="notifications-outline" 
-                        title="Push Notifications" 
-                        type="switch"
-                        value={notificationsEnabled}
-                        onValueChange={setNotificationsEnabled}
-                    />
-                    <SettingItem 
-                        icon="moon-outline" 
-                        title="Dark Mode" 
-                        type="switch"
-                        value={darkModeEnabled}
-                        onValueChange={setDarkModeEnabled}
-                    />
-                    <SettingItem 
-                        icon="language-outline" 
-                        title="Language" 
-                        subtitle="English (US)"
-                        onPress={() => Alert.alert("Coming Soon", "Language selection will be available soon.")} 
-                    />
-                </SettingsSection>
+
+
 
                 {/* Support & About */}
                 <SettingsSection title="Support">

@@ -1,83 +1,55 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
-import { ref, onValue, update } from "firebase/database";
+import { ref, onValue } from "firebase/database";
 import { database, auth } from "../../config/firebase";
 
 const DoctorAffiliationsPage = () => {
     const navigation = useNavigation();
-    const [hospitals, setHospitals] = useState([]);
-    const [affiliations, setAffiliations] = useState([]);
     const [primaryAffiliation, setPrimaryAffiliation] = useState("");
+    const [primaryDays, setPrimaryDays] = useState([]);
+    const [primaryStart, setPrimaryStart] = useState("");
+    const [primaryEnd, setPrimaryEnd] = useState("");
+    const [detailedAffiliations, setDetailedAffiliations] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         const uid = auth.currentUser?.uid;
         if (!uid) return;
 
-        // Fetch all hospitals
-        const hRef = ref(database, "hospitals");
-        const unsubHospitals = onValue(hRef, snapshot => {
-            const res = [];
-            if (snapshot.exists()) {
-                snapshot.forEach(child => {
-                    const hospital = child.val();
-                    if (hospital.name) res.push(hospital.name);
-                });
-            }
-            setHospitals(res);
-        });
-
-        // Fetch doctor's affiliations
         const docRef = ref(database, `doctors/${uid}`);
         const unsubDoc = onValue(docRef, snapshot => {
             if (snapshot.exists()) {
                 const data = snapshot.val();
-                setPrimaryAffiliation(data.hospitalAffiliation || "");
-                setAffiliations(data.affiliations || []);
+                setPrimaryAffiliation(data.hospitalAffiliation || "No Primary Hospital");
+                setPrimaryDays(data.workingDays || []);
+                setPrimaryStart(data.startTime || "");
+                setPrimaryEnd(data.endTime || "");
+                
+                if (data.detailedAffiliations) {
+                    const affils = Object.entries(data.detailedAffiliations).map(([key, val]) => ({
+                        id: key,
+                        ...val
+                    }));
+                    setDetailedAffiliations(affils.reverse());
+                } else {
+                    setDetailedAffiliations([]);
+                }
             }
             setLoading(false);
         });
 
-        return () => {
-            unsubHospitals();
-            unsubDoc();
-        };
+        return () => unsubDoc();
     }, []);
 
-    const toggleAffiliation = (hospitalName) => {
-        if (hospitalName === primaryAffiliation) {
-            Alert.alert("Notice", "This is your primary affiliation. You cannot remove it from here. Contact admin to change your primary affiliation.");
-            return;
-        }
-
-        setAffiliations(prev => {
-            if (prev.includes(hospitalName)) {
-                return prev.filter(h => h !== hospitalName);
-            } else {
-                return [...prev, hospitalName];
-            }
-        });
-    };
-
-    const handleSave = async () => {
-        const uid = auth.currentUser?.uid;
-        if (!uid) return;
-
-        setSaving(true);
-        try {
-            await update(ref(database, `doctors/${uid}`), {
-                affiliations: affiliations
-            });
-            Alert.alert("Success", "Hospital affiliations updated successfully!");
-            navigation.goBack();
-        } catch (error) {
-            Alert.alert("Error", "Failed to update affiliations.");
-        } finally {
-            setSaving(false);
+    const getStatusStyle = (status) => {
+        switch(status) {
+            case "approved": return { color: "#1d8a4e", bg: "#e6f8ef", text: "Approved" };
+            case "pending": return { color: "#e07b00", bg: "#fff4e6", text: "Pending Review" };
+            case "rejected": return { color: "#ba1a1a", bg: "#fff0f0", text: "Rejected" };
+            default: return { color: "#747686", bg: "#f2f4f7", text: status };
         }
     };
 
@@ -94,51 +66,71 @@ const DoctorAffiliationsPage = () => {
                 {loading ? (
                     <ActivityIndicator size="large" color="#1a40c2" style={{ marginTop: 40 }} />
                 ) : (
-                    <View style={styles.card}>
-                        <Text style={styles.description}>
-                            Select the hospitals you are affiliated with. Your primary affiliation is marked and cannot be removed directly.
-                        </Text>
+                    <>
+                        <Text style={styles.sectionTitle}>Primary Affiliation</Text>
+                        <View style={styles.card}>
+                            <View style={styles.hospitalHeader}>
+                                <Ionicons name="business" size={24} color="#1a40c2" />
+                                <View style={styles.hospitalInfo}>
+                                    <Text style={styles.hospitalName}>{primaryAffiliation}</Text>
+                                    <View style={styles.primaryBadge}>
+                                        <Text style={styles.primaryBadgeText}>PRIMARY</Text>
+                                    </View>
+                                </View>
+                            </View>
+                            <View style={styles.scheduleBox}>
+                                <View style={styles.scheduleItem}>
+                                    <Ionicons name="calendar-outline" size={16} color="#747686" />
+                                    <Text style={styles.scheduleText}>{primaryDays.length > 0 ? primaryDays.join(", ") : "Not set"}</Text>
+                                </View>
+                                <View style={styles.scheduleItem}>
+                                    <Ionicons name="time-outline" size={16} color="#747686" />
+                                    <Text style={styles.scheduleText}>{(primaryStart && primaryEnd) ? `${primaryStart} - ${primaryEnd}` : "Not set"}</Text>
+                                </View>
+                            </View>
+                        </View>
+
+                        <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Other Affiliations</Text>
                         
-                        <View style={styles.listContainer}>
-                            {hospitals.map((hospital, index) => {
-                                const isPrimary = hospital === primaryAffiliation;
-                                const isSelected = isPrimary || affiliations.includes(hospital);
-                                
+                        {detailedAffiliations.length === 0 ? (
+                            <Text style={styles.emptyText}>You have no other hospital affiliations.</Text>
+                        ) : (
+                            detailedAffiliations.map(affil => {
+                                const st = getStatusStyle(affil.status);
                                 return (
-                                    <TouchableOpacity 
-                                        key={index} 
-                                        style={[styles.hospitalItem, isSelected && styles.selectedItem]}
-                                        onPress={() => toggleAffiliation(hospital)}
-                                        activeOpacity={isPrimary ? 1 : 0.7}
-                                    >
-                                        <View style={styles.hospitalInfo}>
-                                            <Ionicons name="business" size={20} color={isSelected ? "#1a40c2" : "#747686"} />
-                                            <View>
-                                                <Text style={[styles.hospitalName, isSelected && styles.selectedText]}>{hospital}</Text>
-                                                {isPrimary && <Text style={styles.primaryBadge}>Primary</Text>}
+                                    <View key={affil.id} style={styles.card}>
+                                        <View style={styles.hospitalHeader}>
+                                            <Ionicons name="location-outline" size={24} color={st.color} />
+                                            <View style={styles.hospitalInfo}>
+                                                <Text style={styles.hospitalName} numberOfLines={1}>{affil.hospitalName}</Text>
+                                                <Text style={styles.addressText} numberOfLines={1}>{affil.address}</Text>
                                             </View>
                                         </View>
                                         
-                                        <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
-                                            {isSelected && <Ionicons name="checkmark" size={14} color="#ffffff" />}
+                                        <View style={[styles.statusBanner, { backgroundColor: st.bg }]}>
+                                            <Text style={[styles.statusText, { color: st.color }]}>{st.text}</Text>
                                         </View>
-                                    </TouchableOpacity>
+
+                                        <View style={styles.scheduleBox}>
+                                            <View style={styles.scheduleItem}>
+                                                <Ionicons name="calendar-outline" size={16} color="#747686" />
+                                                <Text style={styles.scheduleText}>{affil.workingDays?.join(", ") || "N/A"}</Text>
+                                            </View>
+                                            <View style={styles.scheduleItem}>
+                                                <Ionicons name="time-outline" size={16} color="#747686" />
+                                                <Text style={styles.scheduleText}>{affil.startTime} - {affil.endTime}</Text>
+                                            </View>
+                                        </View>
+                                    </View>
                                 );
-                            })}
-                        </View>
-                        
-                        <TouchableOpacity 
-                            style={[styles.saveButton, saving && styles.saveButtonDisabled]} 
-                            onPress={handleSave} 
-                            disabled={saving}
-                        >
-                            {saving ? (
-                                <ActivityIndicator color="#ffffff" size="small" />
-                            ) : (
-                                <Text style={styles.saveButtonText}>Save Affiliations</Text>
-                            )}
+                            })
+                        )}
+
+                        <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate("RequestAffiliation")}>
+                            <Ionicons name="add" size={20} color="#ffffff" />
+                            <Text style={styles.addButtonText}>Request New Affiliation</Text>
                         </TouchableOpacity>
-                    </View>
+                    </>
                 )}
             </ScrollView>
         </SafeAreaView>
@@ -157,98 +149,25 @@ const styles = StyleSheet.create({
         borderBottomLeftRadius: 24,
         borderBottomRightRadius: 24,
     },
-    backButton: {
-        width: 38,
-        height: 38,
-        borderRadius: 19,
-        backgroundColor: "rgba(255,255,255,0.15)",
-        alignItems: "center",
-        justifyContent: "center",
-    },
+    backButton: { width: 38, height: 38, borderRadius: 19, backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" },
     headerTitle: { fontSize: 18, fontWeight: "bold", color: "#ffffff" },
     content: { flex: 1 },
-    card: {
-        backgroundColor: "#ffffff",
-        borderRadius: 24,
-        padding: 20,
-        shadowColor: "#1a40c2",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
-    },
-    description: {
-        fontSize: 14,
-        color: "#444654",
-        marginBottom: 20,
-        lineHeight: 20,
-    },
-    listContainer: {
-        gap: 12,
-        marginBottom: 24,
-    },
-    hospitalItem: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: 16,
-        borderRadius: 16,
-        backgroundColor: "#f7f9fc",
-        borderWidth: 1,
-        borderColor: "transparent",
-    },
-    selectedItem: {
-        backgroundColor: "#E6F1FB",
-        borderColor: "rgba(26, 64, 194, 0.2)",
-    },
-    hospitalInfo: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 12,
-        flex: 1,
-    },
-    hospitalName: {
-        fontSize: 15,
-        fontWeight: "600",
-        color: "#444654",
-    },
-    selectedText: {
-        color: "#1a40c2",
-    },
-    primaryBadge: {
-        fontSize: 11,
-        color: "#1d8a4e",
-        fontWeight: "bold",
-        marginTop: 2,
-    },
-    checkbox: {
-        width: 24,
-        height: 24,
-        borderRadius: 6,
-        borderWidth: 2,
-        borderColor: "#c4c5d6",
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    checkboxSelected: {
-        backgroundColor: "#1a40c2",
-        borderColor: "#1a40c2",
-    },
-    saveButton: {
-        backgroundColor: "#1a40c2",
-        borderRadius: 9999,
-        paddingVertical: 14,
-        alignItems: "center",
-        elevation: 3,
-    },
-    saveButtonDisabled: {
-        opacity: 0.7,
-    },
-    saveButtonText: {
-        color: "#ffffff",
-        fontSize: 15,
-        fontWeight: "600",
-    },
+    sectionTitle: { fontSize: 18, fontWeight: "bold", color: "#191c1e", marginBottom: 12 },
+    card: { backgroundColor: "#ffffff", borderRadius: 16, padding: 16, marginBottom: 16, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+    hospitalHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
+    hospitalInfo: { flex: 1 },
+    hospitalName: { fontSize: 16, fontWeight: "bold", color: "#191c1e", marginBottom: 2 },
+    addressText: { fontSize: 12, color: "#747686" },
+    primaryBadge: { alignSelf: "flex-start", backgroundColor: "#e6f8ef", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginTop: 4 },
+    primaryBadgeText: { fontSize: 10, fontWeight: "bold", color: "#1d8a4e", letterSpacing: 0.5 },
+    statusBanner: { alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 9999, marginVertical: 12 },
+    statusText: { fontSize: 11, fontWeight: "bold", textTransform: "uppercase", letterSpacing: 0.5 },
+    scheduleBox: { backgroundColor: "#f2f4f7", padding: 12, borderRadius: 12, gap: 8, marginTop: 12 },
+    scheduleItem: { flexDirection: "row", alignItems: "center", gap: 8 },
+    scheduleText: { fontSize: 13, color: "#444654", fontWeight: "500" },
+    emptyText: { fontSize: 14, color: "#747686", textAlign: "center", marginVertical: 20 },
+    addButton: { flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: "#1a40c2", borderRadius: 9999, paddingVertical: 16, gap: 8, marginTop: 10, marginBottom: 40, shadowColor: "#1a40c2", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 12, elevation: 4 },
+    addButtonText: { color: "#ffffff", fontSize: 16, fontWeight: "bold" }
 });
 
 export default DoctorAffiliationsPage;

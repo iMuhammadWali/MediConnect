@@ -32,6 +32,7 @@ import AdminDoctorEditPage from "./pages/admin/AdminDoctorEditPage";
 import AdminAddHospitalPage from "./pages/admin/AdminAddHospitalPage";
 import AdminHospitalsPage from "./pages/admin/AdminHospitalsPage";
 import AdminDoctorApprovalPage from "./pages/admin/AdminDoctorApprovalPage";
+import AdminAffiliationRequestsPage from "./pages/admin/AdminAffiliationRequestsPage";
 
 import RadiologyPage from "./pages/patient/RadiologyPage";
 import HospitalsPage from "./pages/patient/HospitalsPage";
@@ -41,6 +42,7 @@ import PrescriptionPage from "./pages/patient/PrescriptionPage";
 import ChatPage from "./pages/shared/ChatPage";
 import PatientDetailsPage from "./pages/doctor/PatientDetailsPage";
 import DoctorAffiliationsPage from "./pages/doctor/DoctorAffiliationsPage";
+import RequestAffiliationPage from "./pages/doctor/RequestAffiliationPage";
 import DoctorSchedulePage from "./pages/doctor/DoctorSchedulePage";
 
 const Stack = createNativeStackNavigator();
@@ -110,7 +112,7 @@ function PatientTabs() {
 function DoctorTabs() {
   return (
     <Tab.Navigator
-      screenOptions={{ }}>
+      screenOptions={{}}>
       <Tab.Screen
         name="Dashboard"
         component={DoctorDashboardPage}
@@ -132,7 +134,7 @@ function DoctorTabs() {
           ),
         }}
       />
-        
+
       <Tab.Screen
         name="Messages"
         component={MessagesPage}
@@ -147,6 +149,7 @@ function DoctorTabs() {
         name="Settings"
         component={SettingsPage}
         options={{
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="settings-outline" size={size} color={color} />
           ),
@@ -172,7 +175,7 @@ function PatientStack() {
       <Stack.Screen name="PatientTabs" component={PatientTabs} options={{ headerShown: false }} />
       <Stack.Screen name="FindDoctors" component={FindDoctorsPage} />
       <Stack.Screen name="Emergency" component={EmergencyPage} />
-      <Stack.Screen name="DoctorDetails" component={DoctorDetailsPage} options={{ headerShown: false }}/>
+      <Stack.Screen name="DoctorDetails" component={DoctorDetailsPage} options={{ headerShown: false }} />
       <Stack.Screen name="Radiology" component={RadiologyPage} options={{ headerShown: false }} />
       <Stack.Screen name="Hospitals" component={HospitalsPage} options={{ headerShown: false }} />
       <Stack.Screen name="HospitalDetails" component={HospitalDetailsPage} options={{ headerShown: false }} />
@@ -191,6 +194,7 @@ function DoctorStack() {
       <Stack.Screen name="ChatPage" component={ChatPage} />
       <Stack.Screen name="PatientDetails" component={PatientDetailsPage} />
       <Stack.Screen name="DoctorAffiliations" component={DoctorAffiliationsPage} />
+      <Stack.Screen name="RequestAffiliation" component={RequestAffiliationPage} />
     </Stack.Navigator>
   );
 }
@@ -205,6 +209,7 @@ function AdminStack() {
       <Stack.Screen name="AdminDoctorEdit" component={AdminDoctorEditPage} />
       <Stack.Screen name="AdminHospitals" component={AdminHospitalsPage} />
       <Stack.Screen name="AdminAddHospital" component={AdminAddHospitalPage} />
+      <Stack.Screen name="AdminAffiliationRequests" component={AdminAffiliationRequestsPage} />
     </Stack.Navigator>
   );
 }
