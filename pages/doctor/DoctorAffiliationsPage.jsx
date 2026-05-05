@@ -1,9 +1,9 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
-import { ref, onValue } from "firebase/database";
+import { ref, onValue, remove } from "firebase/database";
 import { database, auth } from "../../config/firebase";
 
 const DoctorAffiliationsPage = () => {
@@ -43,6 +43,29 @@ const DoctorAffiliationsPage = () => {
 
         return () => unsubDoc();
     }, []);
+
+    const handleRemove = (affilId) => {
+        Alert.alert(
+            "Remove Affiliation",
+            "Are you sure you want to remove this affiliation?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Remove",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            const uid = auth.currentUser?.uid;
+                            if (!uid) return;
+                            await remove(ref(database, `doctors/${uid}/detailedAffiliations/${affilId}`));
+                        } catch (error) {
+                            Alert.alert("Error", error.message);
+                        }
+                    }
+                }
+            ]
+        );
+    };
 
     const getStatusStyle = (status) => {
         switch(status) {
@@ -105,6 +128,12 @@ const DoctorAffiliationsPage = () => {
                                                 <Text style={styles.hospitalName} numberOfLines={1}>{affil.hospitalName}</Text>
                                                 <Text style={styles.addressText} numberOfLines={1}>{affil.address}</Text>
                                             </View>
+                                            <TouchableOpacity 
+                                                style={{ padding: 4 }} 
+                                                onPress={() => handleRemove(affil.id)}
+                                            >
+                                                <Ionicons name="trash-outline" size={20} color="#ba1a1a" />
+                                            </TouchableOpacity>
                                         </View>
                                         
                                         <View style={[styles.statusBanner, { backgroundColor: st.bg }]}>

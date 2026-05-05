@@ -76,16 +76,6 @@ function PatientTabs() {
         }}
       />
 
-      {/* <Tab.Screen
-        name="Scheduler"
-        component={SchedulerPage}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="calendar-outline" size={size} color={color} />
-          ),
-        }}
-      /> */}
-
       <Tab.Screen
         name="Messages"
         component={MessagesPage}

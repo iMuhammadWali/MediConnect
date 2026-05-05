@@ -26,6 +26,7 @@ const AdminAffiliationRequestsPage = () => {
                                 pendingReqs.push({
                                     docId,
                                     docName: docData.fullName,
+                                    isVerified: docData.isVerified === true,
                                     affilId,
                                     ...affilData
                                 });
@@ -74,7 +75,14 @@ const AdminAffiliationRequestsPage = () => {
                         <Text style={styles.avatarText}>{item.docName.substring(0, 2).toUpperCase()}</Text>
                     </View>
                     <View>
-                        <Text style={styles.doctorName}>Dr. {item.docName}</Text>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                            <Text style={styles.doctorName}>Dr. {item.docName}</Text>
+                            {!item.isVerified && (
+                                <View style={{ backgroundColor: "#fff0f0", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                                    <Text style={{ fontSize: 9, color: "#ba1a1a", fontWeight: "bold" }}>UNVERIFIED</Text>
+                                </View>
+                            )}
+                        </View>
                         <Text style={styles.dateText}>Requested on {new Date(item.createdAt).toLocaleDateString()}</Text>
                     </View>
                 </View>
@@ -108,8 +116,14 @@ const AdminAffiliationRequestsPage = () => {
                     <Text style={styles.rejectBtnText}>Reject</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
-                    style={[styles.actionBtn, styles.approveBtn]} 
-                    onPress={() => handleAction(item, "approved")}
+                    style={[styles.actionBtn, styles.approveBtn, !item.isVerified && { opacity: 0.5 }]} 
+                    onPress={() => {
+                        if (!item.isVerified) {
+                            Alert.alert("Doctor Unverified", "You cannot approve affiliations for unverified doctors. Verify the doctor first.");
+                            return;
+                        }
+                        handleAction(item, "approved");
+                    }}
                 >
                     <Ionicons name="checkmark" size={18} color="#ffffff" />
                     <Text style={styles.approveBtnText}>Approve</Text>
