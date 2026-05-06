@@ -135,7 +135,11 @@ const ChatPage = () => {
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>{otherName || "Chat"}</Text>
             </View>
-            <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+            <KeyboardAvoidingView 
+                style={{ flex: 1 }} 
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+            >
                 <FlatList
                     ref={flatListRef}
                     data={[...messages].reverse()}
