@@ -15,11 +15,11 @@ const DoctorDashboardPage = () => {
     const [appointments, setAppointments] = useState([]);
     const [patientsMap, setPatientsMap] = useState({});
     const [rating, setRating] = useState(0);
-    
+
     useEffect(() => {
         const uid = auth.currentUser?.uid;
         if (!uid) return;
-        
+
         const docRef = ref(database, `doctors/${uid}`);
         const unsubDoc = onValue(docRef, snapshot => {
             if (snapshot.exists()) {
@@ -109,29 +109,30 @@ const DoctorDashboardPage = () => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <TopBar 
+            <TopBar
                 userName={doctorName}
                 avatarText={doctorName.replace("Dr. ", "").substring(0, 2).toUpperCase() || "DR"}
                 greeting="Good Morning"
-                onNotificationPress={() => {}}
+                onNotificationPress={() => { }}
                 statusBadge={getApprovalBadge()}
             />
 
-            {/* Pending approval banner */}
-            {!isVerified && (
-                <View style={styles.pendingBanner}>
-                    <Ionicons name="information-circle" size={18} color="#92400e" />
-                    <Text style={styles.pendingBannerText}>
-                        Your profile is pending admin approval. You can add affiliations once approved.
-                    </Text>
-                </View>
-            )}
-
-            <ScrollView 
+            <ScrollView
                 style={styles.scrollView}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scrollContent}>
-            
+                contentContainerStyle={styles.scrollContent}
+            >
+                {/* Pending approval banner - now inside ScrollView to prevent layout shifting */}
+                {!isVerified && (
+                    <View style={styles.pendingBanner}>
+                        <View style={styles.bannerIconContainer}>
+                            <Ionicons name="information-circle" size={22} color="#92400e" />
+                        </View>
+                        <Text style={styles.pendingBannerText}>
+                            Your profile is pending admin approval. You can add affiliations once approved.
+                        </Text>
+                    </View>
+                )}
 
                 {/* Stats Section */}
                 <View style={styles.statsSection}>
@@ -142,58 +143,69 @@ const DoctorDashboardPage = () => {
 
                 {/* Quick Actions Section */}
                 <View style={styles.quickActionsSection}>
-                    <TouchableOpacity 
-                        style={styles.quickActionButton}
-                        onPress={() => navigation.navigate("DoctorAffiliations")}
-                    >
-                        <Ionicons name="business" size={24} color="#1a40c2" />
-                        <View style={{ flex: 1 }}>
-                            <Text style={styles.quickActionText}>Manage Affiliations</Text>
-                            <Text style={styles.quickActionSubtext}>Hospitals & schedules</Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={18} color="#c4c5d6" />
-                    </TouchableOpacity>
+                    <Text style={styles.sectionLabel}>Quick Actions</Text>
+                    <View style={styles.actionsGrid}>
+                        <TouchableOpacity
+                            style={styles.quickActionButton}
+                            onPress={() => navigation.navigate("DoctorAffiliations")}
+                        >
+                            <View style={[styles.actionIcon, { backgroundColor: '#eef2ff' }]}>
+                                <Ionicons name="business" size={24} color="#4767e6" />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.quickActionText}>Manage Affiliations</Text>
+                                <Text style={styles.quickActionSubtext}>Hospitals & schedules</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={18} color="#c4c5d6" />
+                        </TouchableOpacity>
 
-                    <TouchableOpacity 
-                        style={styles.quickActionButton}
-                        onPress={() => navigation.navigate("DoctorPrescriptions")}
-                    >
-                        <Ionicons name="document-text" size={24} color="#1a40c2" />
-                        <View style={{ flex: 1 }}>
-                            <Text style={styles.quickActionText}>Prescriptions</Text>
-                            <Text style={styles.quickActionSubtext}>Manage patient prescriptions</Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={18} color="#c4c5d6" />
-                    </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.quickActionButton}
+                            onPress={() => navigation.navigate("DoctorPrescriptions")}
+                        >
+                            <View style={[styles.actionIcon, { backgroundColor: '#fdf2f8' }]}>
+                                <Ionicons name="document-text" size={24} color="#db2777" />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.quickActionText}>Prescriptions</Text>
+                                <Text style={styles.quickActionSubtext}>Manage patient records</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={18} color="#c4c5d6" />
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 {/* Today's Schedule Section */}
                 <View style={styles.scheduleSection}>
                     <View style={styles.scheduleHeader}>
                         <Text style={styles.sectionTitle}>Upcoming Schedule</Text>
-                        <TouchableOpacity onPress={() => navigation.navigate("Schedule")}>
+                        <TouchableOpacity onPress={() => navigation.navigate("Schedule")} style={styles.viewAllBtn}>
                             <Text style={styles.viewAllText}>View All</Text>
+                            <Ionicons name="arrow-forward" size={14} color="#1a40c2" />
                         </TouchableOpacity>
                     </View>
                     <View style={styles.scheduleList}>
                         {upcomingApps.length === 0 ? (
-                            <Text style={{color: "#747686", textAlign: "center", marginTop: 20}}>No upcoming appointments.</Text>
+                            <View style={styles.emptyState}>
+                                <Ionicons name="calendar-outline" size={48} color="#c4c5d6" />
+                                <Text style={styles.emptyStateText}>No upcoming appointments.</Text>
+                            </View>
                         ) : upcomingApps.slice(0, 5).map((item) => {
                             const pName = patientsMap[item.patientId]?.fullName || "Loading Patient...";
                             const pInitials = pName !== "Loading Patient..." ? pName.substring(0, 2).toUpperCase() : "PT";
                             return (
-                            <ScheduleItem 
-                                key={item.id} 
-                                item={{
-                                    initials: pInitials,
-                                    name: pName,
-                                    time: `${item.date || "TBD"} at ${item.time || "TBD"}`,
-                                    type: "Consultation",
-                                    typeColor: "#dde1ff",
-                                    typeTextColor: "#0736ba",
-                                }} 
-                                onPress={() => navigation.navigate("PatientDetails", { patientId: item.patientId })}
-                            />
+                                <ScheduleItem
+                                    key={item.id}
+                                    item={{
+                                        initials: pInitials,
+                                        name: pName,
+                                        time: `${item.date || "TBD"} at ${item.time || "TBD"}`,
+                                        type: "Consultation",
+                                        typeColor: "#dde1ff",
+                                        typeTextColor: "#0736ba",
+                                    }}
+                                    onPress={() => navigation.navigate("PatientDetails", { patientId: item.patientId })}
+                                />
                             );
                         })}
                     </View>
@@ -212,79 +224,112 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        paddingTop: 12,
         paddingBottom: 40,
     },
     pendingBanner: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 8,
+        gap: 12,
         backgroundColor: "#fef3c7",
         marginHorizontal: 20,
-        marginTop: 12,
-        padding: 12,
-        borderRadius: 12,
-        borderLeftWidth: 3,
+        marginTop: 16,
+        padding: 16,
+        borderRadius: 16,
+        borderLeftWidth: 4,
         borderLeftColor: "#f59e0b",
+        shadowColor: "#f59e0b",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    bannerIconContainer: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: "rgba(245, 158, 11, 0.15)",
+        alignItems: "center",
+        justifyContent: "center",
     },
     pendingBannerText: {
         flex: 1,
-        fontSize: 12,
+        fontSize: 13,
         color: "#92400e",
         lineHeight: 18,
-        fontWeight: "500",
+        fontWeight: "600",
     },
     statsSection: {
         flexDirection: "row",
         paddingHorizontal: 20,
-        marginTop: 16,
+        marginTop: 20,
         gap: 12,
     },
     statCard: {
         flex: 1,
         backgroundColor: "#E6F1FB",
-        padding: 12,
-        borderRadius: 16,
+        padding: 14,
+        borderRadius: 20,
         justifyContent: "space-between",
-        minHeight: 110,
+        minHeight: 120,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.02,
+        shadowRadius: 10,
+        elevation: 1,
     },
     statTextContainer: {
-        marginTop: 12,
+        marginTop: 14,
     },
     statTitle: {
-        fontSize: 11,
-        fontWeight: "500",
-        color: "#444654",
+        fontSize: 10,
+        fontWeight: "700",
+        color: "#747686",
         textTransform: "uppercase",
-        letterSpacing: 0.5,
+        letterSpacing: 1,
         marginBottom: 4,
     },
     statValue: {
-        fontSize: 28,
+        fontSize: 26,
         fontWeight: "bold",
         color: "#191c1e",
     },
-    scheduleSection: {
-        marginTop: 24,
-        paddingHorizontal: 20,
-    },
     quickActionsSection: {
         paddingHorizontal: 20,
-        marginTop: 16,
-        gap: 10,
+        marginTop: 28,
+    },
+    sectionLabel: {
+        fontSize: 14,
+        fontWeight: "700",
+        color: "#747686",
+        textTransform: "uppercase",
+        letterSpacing: 1,
+        marginBottom: 16,
+        marginLeft: 4,
+    },
+    actionsGrid: {
+        gap: 12,
     },
     quickActionButton: {
         flexDirection: "row",
         alignItems: "center",
         backgroundColor: "#ffffff",
         padding: 16,
-        borderRadius: 16,
-        gap: 12,
+        borderRadius: 20,
+        gap: 16,
+        borderWidth: 1,
+        borderColor: "#f0f2f5",
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.02,
-        shadowRadius: 12,
-        elevation: 1,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.03,
+        shadowRadius: 20,
+        elevation: 2,
+    },
+    actionIcon: {
+        width: 48,
+        height: 48,
+        borderRadius: 14,
+        alignItems: "center",
+        justifyContent: "center",
     },
     quickActionText: {
         fontSize: 16,
@@ -296,38 +341,69 @@ const styles = StyleSheet.create({
         color: "#747686",
         marginTop: 2,
     },
+    scheduleSection: {
+        marginTop: 32,
+        paddingHorizontal: 20,
+    },
     scheduleHeader: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginBottom: 16,
+        marginBottom: 20,
     },
     sectionTitle: {
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: "bold",
         color: "#191c1e",
         letterSpacing: -0.5,
     },
+    viewAllBtn: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 4,
+        backgroundColor: "#f0f4ff",
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 9999,
+    },
     viewAllText: {
-        fontSize: 14,
-        fontWeight: "600",
+        fontSize: 13,
+        fontWeight: "700",
         color: "#1a40c2",
     },
     scheduleList: {
-        gap: 12,
+        gap: 14,
+    },
+    emptyState: {
+        alignItems: "center",
+        justifyContent: "center",
+        paddingVertical: 40,
+        backgroundColor: "#fff",
+        borderRadius: 24,
+        borderWidth: 1,
+        borderStyle: "dashed",
+        borderColor: "#c4c5d6",
+    },
+    emptyStateText: {
+        color: "#747686",
+        fontSize: 14,
+        marginTop: 12,
+        fontWeight: "500",
     },
     scheduleCard: {
         backgroundColor: "#ffffff",
-        borderRadius: 16,
+        borderRadius: 20,
         padding: 16,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.02,
-        shadowRadius: 12,
-        elevation: 1,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.03,
+        shadowRadius: 16,
+        elevation: 2,
+        borderWidth: 1,
+        borderColor: "#f8f9fa",
     },
     scheduleLeft: {
         flexDirection: "row",
@@ -335,15 +411,15 @@ const styles = StyleSheet.create({
         gap: 16,
     },
     patientAvatar: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+        width: 52,
+        height: 52,
+        borderRadius: 18,
         backgroundColor: "#E6F1FB",
         alignItems: "center",
         justifyContent: "center",
     },
     patientInitials: {
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: "bold",
         color: "#0C447C",
     },
@@ -359,8 +435,9 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     appointmentTime: {
-        fontSize: 14,
-        color: "#444654",
+        fontSize: 13,
+        color: "#747686",
+        fontWeight: "500",
     },
     dot: {
         width: 4,
@@ -369,21 +446,26 @@ const styles = StyleSheet.create({
         backgroundColor: "#c4c5d6",
     },
     typeBadge: {
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 9999,
+        paddingHorizontal: 10,
+        paddingVertical: 3,
+        borderRadius: 8,
     },
     typeText: {
-        fontSize: 10,
-        fontWeight: "bold",
+        fontSize: 9,
+        fontWeight: "800",
         textTransform: "uppercase",
-        letterSpacing: 0.5,
+        letterSpacing: 0.8,
     },
     viewButton: {
-        backgroundColor: "#3B5BDB",
+        backgroundColor: "#1a40c2",
         paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 9999,
+        paddingVertical: 10,
+        borderRadius: 12,
+        shadowColor: "#1a40c2",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 3,
     },
     viewButtonText: {
         color: "#ffffff",

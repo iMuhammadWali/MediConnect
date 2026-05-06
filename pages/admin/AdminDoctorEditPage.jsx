@@ -41,6 +41,7 @@ const AdminDoctorEditPage = () => {
     const [selectedSpecializations, setSelectedSpecializations] = useState([]);
     const [selectedLanguages, setSelectedLanguages] = useState([]);
     const [workingDays, setWorkingDays] = useState([]);
+    const [detailedAffiliations, setDetailedAffiliations] = useState({});
 
     const specializations = [
         "Cardiologist", "Interventional Cardiologist", "Pediatric Cardiologist",
@@ -119,6 +120,7 @@ const AdminDoctorEditPage = () => {
                 setSelectedSpecializations(d.specializations || []);
                 setSelectedLanguages(d.languages || []);
                 setWorkingDays(d.workingDays || []);
+                setDetailedAffiliations(d.detailedAffiliations || {});
             }
             setLoading(false);
         });
@@ -175,6 +177,29 @@ const AdminDoctorEditPage = () => {
         } finally {
             setSaving(false);
         }
+    };
+
+    const handleRemoveAffiliation = (affKey, hospitalName) => {
+        Alert.alert(
+            "Remove Affiliation",
+            `Are you sure you want to remove the affiliation with ${hospitalName}?`,
+            [
+                { text: "Cancel", style: "cancel" },
+                { 
+                    text: "Remove", 
+                    style: "destructive", 
+                    onPress: async () => {
+                        try {
+                            const affRef = ref(database, `doctors/${doctorUid}/detailedAffiliations/${affKey}`);
+                            await set(affRef, null);
+                            Alert.alert("Success", "Affiliation removed.");
+                        } catch (e) {
+                            Alert.alert("Error", e.message);
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     if (loading) {
@@ -266,7 +291,33 @@ const AdminDoctorEditPage = () => {
                         />
 
                         <FormInput label="Medical License Number" icon="card-outline" placeholder="License Number" value={medicalLicense} onChangeText={setMedicalLicense} required />
-                        <FormInput label="Hospital/Clinic Affiliation" icon="business-outline" placeholder="Hospital Name" value={hospitalAffiliation} onChangeText={setHospitalAffiliation} required />
+                        
+                        <SectionDivider title="Manage Detailed Affiliations" />
+                        {Object.entries(detailedAffiliations).length === 0 ? (
+                            <Text style={styles.emptyText}>No detailed affiliations found.</Text>
+                        ) : (
+                            Object.entries(detailedAffiliations).map(([key, aff]) => (
+                                <View key={key} style={styles.affCard}>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={styles.affName}>{aff.hospitalName}</Text>
+                                        <Text style={styles.affDetails}>
+                                            {aff.workingDays?.join(", ")} • {aff.startTime}-{aff.endTime}
+                                        </Text>
+                                        <Text style={[styles.statusBadgeText, aff.status === 'approved' ? styles.statusApproved : styles.statusPending]}>
+                                            {aff.status?.toUpperCase()}
+                                        </Text>
+                                    </View>
+                                    <TouchableOpacity 
+                                        style={styles.removeAffBtn} 
+                                        onPress={() => handleRemoveAffiliation(key, aff.hospitalName)}
+                                    >
+                                        <Ionicons name="trash-outline" size={20} color="#ba1a1a" />
+                                    </TouchableOpacity>
+                                </View>
+                            ))
+                        )}
+
+                        <FormInput label="Hospital/Clinic Affiliation (Primary Display)" icon="business-outline" placeholder="Hospital Name" value={hospitalAffiliation} onChangeText={setHospitalAffiliation} required />
 
                         <View style={styles.rowContainer}>
                             <View style={{ flex: 1 }}>
@@ -382,6 +433,28 @@ const styles = StyleSheet.create({
     },
     saveButtonDisabled: { opacity: 0.6 },
     saveButtonText: { color: "#ffffff", fontSize: 14, fontWeight: "600" },
+    emptyText: { textAlign: "center", color: "#747686", marginVertical: 10, fontStyle: "italic", fontSize: 13 },
+    affCard: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#f7f9fc",
+        padding: 12,
+        borderRadius: 12,
+        marginBottom: 10,
+        borderLeftWidth: 3,
+        borderLeftColor: "#1a40c2",
+    },
+    affName: { fontSize: 14, fontWeight: "bold", color: "#191c1e" },
+    affDetails: { fontSize: 11, color: "#444654", marginTop: 2 },
+    statusBadgeText: { fontSize: 9, fontWeight: "bold", marginTop: 4, alignSelf: "flex-start" },
+    statusApproved: { color: "#1d8a4e" },
+    statusPending: { color: "#e07b00" },
+    removeAffBtn: {
+        padding: 8,
+        backgroundColor: "#fff",
+        borderRadius: 8,
+        marginLeft: 10,
+    }
 });
 
 export default AdminDoctorEditPage;
