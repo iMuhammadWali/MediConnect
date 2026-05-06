@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,6 +19,7 @@ const RequestAffiliationPage = () => {
     const [selectedDays, setSelectedDays] = useState([]);
     const [startTime, setStartTime] = useState("09:00");
     const [endTime, setEndTime] = useState("17:00");
+    const [consultationFee, setConsultationFee] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [doctorData, setDoctorData] = useState(null);
 
@@ -30,7 +31,14 @@ const RequestAffiliationPage = () => {
             if (!uid) return;
             const docSnap = await get(ref(database, `doctors/${uid}`));
             if (docSnap.exists()) {
-                setDoctorData(docSnap.val());
+                const data = docSnap.val();
+                setDoctorData(data);
+                // Guard: if not verified, redirect back
+                if (!data.isVerified) {
+                    Alert.alert("Approval Required", "You need admin approval before adding affiliations.", [
+                        { text: "OK", onPress: () => navigation.goBack() }
+                    ]);
+                }
             }
         };
         fetchDoctorData();
@@ -41,7 +49,6 @@ const RequestAffiliationPage = () => {
         setIsSearching(true);
         setSelectedHospital(null);
         try {
-            // Using OpenStreetMap Nominatim API for hospital search
             const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery + " hospital")}&limit=5`;
             const response = await fetch(url, {
                 headers: {
@@ -67,7 +74,6 @@ const RequestAffiliationPage = () => {
     };
 
     const parseTime = (timeStr) => {
-        // Simple parser assuming HH:MM format (24h)
         const [h, m] = timeStr.split(':');
         return parseInt(h) * 60 + parseInt(m);
     };
@@ -77,46 +83,10 @@ const RequestAffiliationPage = () => {
         
         const reqStart = parseTime(startTime);
         const reqEnd = parseTime(endTime);
-        
-        // Check primary schedule
-        const primaryDays = doctorData.workingDays || [];
-        // Assuming primary start/end might be "09:00 AM", we need a robust parser.
-        // For simplicity here, we assume standard conflicts if they share a day and times overlap.
-        // If times are saved as '09:00 AM' in DB, we'll need to parse AM/PM.
-        const parseAmPm = (t) => {
-            if (!t) return 0;
-            const [time, modifier] = t.split(' ');
-            let [hours, minutes] = time.split(':');
-            hours = parseInt(hours);
-            if (hours === 12) hours = 0;
-            if (modifier === 'PM') hours += 12;
-            return hours * 60 + parseInt(minutes);
-        };
-        
-        let primaryStart = 0;
-        let primaryEnd = 0;
-        if (doctorData.startTime && doctorData.startTime.includes('M')) {
-            primaryStart = parseAmPm(doctorData.startTime);
-            primaryEnd = parseAmPm(doctorData.endTime);
-        } else if (doctorData.startTime) {
-            primaryStart = parseTime(doctorData.startTime);
-            primaryEnd = parseTime(doctorData.endTime);
-        }
-
-        let conflictFound = false;
-
-        // Check primary
-        for (const day of selectedDays) {
-            if (primaryDays.includes(day)) {
-                if (reqStart < primaryEnd && reqEnd > primaryStart) {
-                    Alert.alert("Schedule Conflict", `This schedule conflicts with your primary hospital on ${day}.`);
-                    return true;
-                }
-            }
-        }
 
         // Check detailedAffiliations
         if (doctorData.detailedAffiliations) {
+            let conflictFound = false;
             Object.values(doctorData.detailedAffiliations).forEach(affil => {
                 if (affil.status === 'rejected') return;
                 const affStart = parseTime(affil.startTime);
@@ -131,9 +101,10 @@ const RequestAffiliationPage = () => {
                     }
                 }
             });
+            if (conflictFound) return true;
         }
         
-        return conflictFound;
+        return false;
     };
 
     const handleSubmit = async () => {
@@ -145,8 +116,16 @@ const RequestAffiliationPage = () => {
             Alert.alert("Required", "Please select at least one working day.");
             return;
         }
+        
+        const reqStart = parseTime(startTime);
+        const reqEnd = parseTime(endTime);
+        
         if (reqStart >= reqEnd) {
             Alert.alert("Invalid Time", "End time must be after start time.");
+            return;
+        }
+        if (!consultationFee || parseInt(consultationFee) <= 0) {
+            Alert.alert("Required", "Please enter a valid consultation fee.");
             return;
         }
 
@@ -165,6 +144,7 @@ const RequestAffiliationPage = () => {
                 workingDays: selectedDays,
                 startTime,
                 endTime,
+                consultationFee: parseInt(consultationFee),
                 status: "pending",
                 createdAt: new Date().toISOString()
             });
@@ -178,9 +158,6 @@ const RequestAffiliationPage = () => {
         }
     };
 
-    const reqStart = parseTime(startTime);
-    const reqEnd = parseTime(endTime);
-
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
@@ -190,114 +167,136 @@ const RequestAffiliationPage = () => {
                 <Text style={styles.headerTitle}>Request Affiliation</Text>
             </View>
 
-            <ScrollView style={styles.content} contentContainerStyle={{ padding: 20 }}>
-                {/* Step 1: Search Hospital */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>1. Search Hospital</Text>
-                    <View style={styles.searchRow}>
-                        <TextInput
-                            style={styles.searchInput}
-                            placeholder="Hospital name (e.g. City Hospital)"
-                            value={searchQuery}
-                            onChangeText={setSearchQuery}
-                            onSubmitEditing={handleSearch}
-                        />
-                        <TouchableOpacity style={styles.searchBtn} onPress={handleSearch} disabled={isSearching}>
-                            {isSearching ? <ActivityIndicator color="#fff" size="small" /> : <Ionicons name="search" size={20} color="#fff" />}
-                        </TouchableOpacity>
+            <KeyboardAvoidingView 
+                style={{ flex: 1 }} 
+                behavior={Platform.OS === "ios" ? "padding" : undefined}
+            >
+                <ScrollView 
+                    style={styles.content} 
+                    contentContainerStyle={{ padding: 20 }}
+                    keyboardShouldPersistTaps="handled"
+                >
+                    {/* Step 1: Search Hospital */}
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>1. Search Hospital</Text>
+                        <View style={styles.searchRow}>
+                            <TextInput
+                                style={styles.searchInput}
+                                placeholder="Hospital name (e.g. City Hospital)"
+                                value={searchQuery}
+                                onChangeText={setSearchQuery}
+                                onSubmitEditing={handleSearch}
+                            />
+                            <TouchableOpacity style={styles.searchBtn} onPress={handleSearch} disabled={isSearching}>
+                                {isSearching ? <ActivityIndicator color="#fff" size="small" /> : <Ionicons name="search" size={20} color="#fff" />}
+                            </TouchableOpacity>
+                        </View>
+
+                        {searchResults.length > 0 && !selectedHospital && (
+                            <View style={styles.resultsContainer}>
+                                {searchResults.map((item, index) => (
+                                    <TouchableOpacity 
+                                        key={index} 
+                                        style={styles.resultItem}
+                                        onPress={() => setSelectedHospital(item)}
+                                    >
+                                        <Ionicons name="business" size={20} color="#1a40c2" />
+                                        <Text style={styles.resultText} numberOfLines={2}>
+                                            {item.display_name}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
+
+                        {selectedHospital && (
+                            <View style={styles.selectedHospitalCard}>
+                                <View style={styles.selectedHospitalInfo}>
+                                    <Ionicons name="business" size={24} color="#1a40c2" />
+                                    <View style={{ flex: 1, marginLeft: 12 }}>
+                                        <Text style={styles.hospitalNameBold}>{selectedHospital.name || selectedHospital.display_name.split(',')[0]}</Text>
+                                        <Text style={styles.hospitalAddress} numberOfLines={2}>{selectedHospital.display_name}</Text>
+                                    </View>
+                                </View>
+                                <TouchableOpacity onPress={() => setSelectedHospital(null)}>
+                                    <Text style={styles.changeBtn}>Change</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
                     </View>
 
-                    {searchResults.length > 0 && !selectedHospital && (
-                        <View style={styles.resultsContainer}>
-                            {searchResults.map((item, index) => (
-                                <TouchableOpacity 
-                                    key={index} 
-                                    style={styles.resultItem}
-                                    onPress={() => setSelectedHospital(item)}
+                    {/* Step 2: Set Schedule */}
+                    <View style={[styles.section, !selectedHospital && styles.disabledSection]}>
+                        <Text style={styles.sectionTitle}>2. Availability Days</Text>
+                        <View style={styles.daysGrid}>
+                            {DAYS_OF_WEEK.map(day => (
+                                <TouchableOpacity
+                                    key={day}
+                                    style={[styles.dayChip, selectedDays.includes(day) && styles.dayChipActive]}
+                                    onPress={() => selectedHospital && toggleDay(day)}
+                                    disabled={!selectedHospital}
                                 >
-                                    <Ionicons name="business" size={20} color="#1a40c2" />
-                                    <Text style={styles.resultText} numberOfLines={2}>
-                                        {item.display_name}
-                                    </Text>
+                                    <Text style={[styles.dayText, selectedDays.includes(day) && styles.dayTextActive]}>{day}</Text>
                                 </TouchableOpacity>
                             ))}
                         </View>
-                    )}
 
-                    {selectedHospital && (
-                        <View style={styles.selectedHospitalCard}>
-                            <View style={styles.selectedHospitalInfo}>
-                                <Ionicons name="business" size={24} color="#1a40c2" />
-                                <View style={{ flex: 1, marginLeft: 12 }}>
-                                    <Text style={styles.hospitalNameBold}>{selectedHospital.name || selectedHospital.display_name.split(',')[0]}</Text>
-                                    <Text style={styles.hospitalAddress} numberOfLines={2}>{selectedHospital.display_name}</Text>
-                                </View>
+                        <Text style={[styles.sectionTitle, { marginTop: 20 }]}>3. Working Hours (24h format)</Text>
+                        <View style={styles.timeRow}>
+                            <View style={styles.timeInputContainer}>
+                                <Text style={styles.timeLabel}>Start Time</Text>
+                                <TextInput
+                                    style={styles.timeInput}
+                                    value={startTime}
+                                    onChangeText={setStartTime}
+                                    placeholder="09:00"
+                                    keyboardType="numbers-and-punctuation"
+                                    editable={!!selectedHospital}
+                                />
                             </View>
-                            <TouchableOpacity onPress={() => setSelectedHospital(null)}>
-                                <Text style={styles.changeBtn}>Change</Text>
-                            </TouchableOpacity>
+                            <Text style={{ marginTop: 24, marginHorizontal: 10, color: "#747686" }}>to</Text>
+                            <View style={styles.timeInputContainer}>
+                                <Text style={styles.timeLabel}>End Time</Text>
+                                <TextInput
+                                    style={styles.timeInput}
+                                    value={endTime}
+                                    onChangeText={setEndTime}
+                                    placeholder="17:00"
+                                    keyboardType="numbers-and-punctuation"
+                                    editable={!!selectedHospital}
+                                />
+                            </View>
                         </View>
-                    )}
-                </View>
 
-                {/* Step 2: Set Schedule */}
-                <View style={[styles.section, !selectedHospital && styles.disabledSection]}>
-                    <Text style={styles.sectionTitle}>2. Working Days</Text>
-                    <View style={styles.daysGrid}>
-                        {DAYS_OF_WEEK.map(day => (
-                            <TouchableOpacity
-                                key={day}
-                                style={[styles.dayChip, selectedDays.includes(day) && styles.dayChipActive]}
-                                onPress={() => selectedHospital && toggleDay(day)}
-                                disabled={!selectedHospital}
-                            >
-                                <Text style={[styles.dayText, selectedDays.includes(day) && styles.dayTextActive]}>{day}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-
-                    <Text style={[styles.sectionTitle, { marginTop: 20 }]}>3. Working Hours (24h format)</Text>
-                    <View style={styles.timeRow}>
-                        <View style={styles.timeInputContainer}>
-                            <Text style={styles.timeLabel}>Start Time</Text>
+                        <Text style={[styles.sectionTitle, { marginTop: 20 }]}>4. Consultation Fee</Text>
+                        <View style={styles.feeContainer}>
+                            <Text style={styles.feeCurrency}>PKR</Text>
                             <TextInput
-                                style={styles.timeInput}
-                                value={startTime}
-                                onChangeText={setStartTime}
-                                placeholder="09:00"
-                                keyboardType="numbers-and-punctuation"
-                                editable={!!selectedHospital}
-                            />
-                        </View>
-                        <Text style={{ marginTop: 24, marginHorizontal: 10, color: "#747686" }}>to</Text>
-                        <View style={styles.timeInputContainer}>
-                            <Text style={styles.timeLabel}>End Time</Text>
-                            <TextInput
-                                style={styles.timeInput}
-                                value={endTime}
-                                onChangeText={setEndTime}
-                                placeholder="17:00"
-                                keyboardType="numbers-and-punctuation"
+                                style={styles.feeInput}
+                                value={consultationFee}
+                                onChangeText={setConsultationFee}
+                                placeholder="2000"
+                                keyboardType="numeric"
                                 editable={!!selectedHospital}
                             />
                         </View>
                     </View>
-                </View>
 
-                {/* Submit */}
-                <TouchableOpacity 
-                    style={[styles.submitButton, (!selectedHospital || selectedDays.length === 0 || submitting) && styles.submitDisabled]} 
-                    onPress={handleSubmit}
-                    disabled={!selectedHospital || selectedDays.length === 0 || submitting}
-                >
-                    {submitting ? (
-                        <ActivityIndicator color="#ffffff" />
-                    ) : (
-                        <Text style={styles.submitButtonText}>Submit Request</Text>
-                    )}
-                </TouchableOpacity>
+                    {/* Submit */}
+                    <TouchableOpacity 
+                        style={[styles.submitButton, (!selectedHospital || selectedDays.length === 0 || submitting || !consultationFee) && styles.submitDisabled]} 
+                        onPress={handleSubmit}
+                        disabled={!selectedHospital || selectedDays.length === 0 || submitting || !consultationFee}
+                    >
+                        {submitting ? (
+                            <ActivityIndicator color="#ffffff" />
+                        ) : (
+                            <Text style={styles.submitButtonText}>Submit Request</Text>
+                        )}
+                    </TouchableOpacity>
 
-            </ScrollView>
+                </ScrollView>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 };
@@ -347,6 +346,16 @@ const styles = StyleSheet.create({
     timeInputContainer: { flex: 1 },
     timeLabel: { fontSize: 12, fontWeight: "500", color: "#747686", marginBottom: 6, marginLeft: 4 },
     timeInput: { backgroundColor: "#f2f4f7", paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, fontSize: 16, textAlign: "center", fontWeight: "bold", color: "#191c1e" },
+    feeContainer: { 
+        flexDirection: "row", 
+        alignItems: "center", 
+        backgroundColor: "#f2f4f7", 
+        borderRadius: 12, 
+        paddingHorizontal: 16,
+        gap: 8,
+    },
+    feeCurrency: { fontSize: 16, fontWeight: "bold", color: "#1a40c2" },
+    feeInput: { flex: 1, paddingVertical: 14, fontSize: 18, fontWeight: "bold", color: "#191c1e" },
     submitButton: { backgroundColor: "#1a40c2", borderRadius: 9999, paddingVertical: 16, alignItems: "center", marginTop: 10, marginBottom: 40, shadowColor: "#1a40c2", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 12, elevation: 4 },
     submitDisabled: { backgroundColor: "#c4c5d6", shadowOpacity: 0 },
     submitButtonText: { color: "#ffffff", fontSize: 16, fontWeight: "bold" }

@@ -71,7 +71,6 @@ const PatientDetailsPage = () => {
                         <Text style={styles.patientInitials}>{initials}</Text>
                     </View>
                     <Text style={styles.patientName}>{patient.fullName}</Text>
-                    <Text style={styles.patientInfo}>{patient.phone || "No phone number"}</Text>
                     <Text style={styles.patientInfo}>{patient.email || "No email"}</Text>
                 </View>
             </View>

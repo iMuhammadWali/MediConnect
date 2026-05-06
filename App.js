@@ -13,10 +13,10 @@ import { get, onValue, ref } from "firebase/database";
 import OnboardingPage from "./pages/auth/OnboardingPage";
 import LoginPage from "./pages/auth/LoginPage";
 import SignUpPage from "./pages/auth/SignupPage";
+import EmailVerificationPage from "./pages/auth/EmailVerificationPage";
 
 import HomePage from "./pages/patient/HomePage";
 import AppointmentsPage from "./pages/patient/AppointmentsPage";
-import SchedulerPage from "./pages/shared/SchedulerPage";
 import MessagesPage from "./pages/shared/MessagesPage";
 import SettingsPage from "./pages/shared/SettingsPage";
 
@@ -44,6 +44,9 @@ import PatientDetailsPage from "./pages/doctor/PatientDetailsPage";
 import DoctorAffiliationsPage from "./pages/doctor/DoctorAffiliationsPage";
 import RequestAffiliationPage from "./pages/doctor/RequestAffiliationPage";
 import DoctorSchedulePage from "./pages/doctor/DoctorSchedulePage";
+import PaymentPage from "./pages/patient/PaymentPage";
+import BookingConfirmPage from "./pages/patient/BookingConfirmPage";
+import DoctorPrescriptionsPage from "./pages/doctor/DoctorPrescriptionsPage";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -159,6 +162,14 @@ function AuthStack() {
   );
 }
 
+function VerificationStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="EmailVerification" component={EmailVerificationPage} />
+    </Stack.Navigator>
+  );
+}
+
 function PatientStack() {
   return (
     <Stack.Navigator screenOptions={{}}>
@@ -172,6 +183,8 @@ function PatientStack() {
       <Stack.Screen name="BloodBank" component={BloodBankPage} options={{ headerShown: false }} />
       <Stack.Screen name="Prescription" component={PrescriptionPage} options={{ headerShown: false }} />
       <Stack.Screen name="ChatPage" component={ChatPage} options={{ headerShown: false }} />
+      <Stack.Screen name="Payment" component={PaymentPage} options={{ headerShown: false }} />
+      <Stack.Screen name="BookingConfirm" component={BookingConfirmPage} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }
@@ -185,6 +198,7 @@ function DoctorStack() {
       <Stack.Screen name="PatientDetails" component={PatientDetailsPage} />
       <Stack.Screen name="DoctorAffiliations" component={DoctorAffiliationsPage} />
       <Stack.Screen name="RequestAffiliation" component={RequestAffiliationPage} />
+      <Stack.Screen name="DoctorPrescriptions" component={DoctorPrescriptionsPage} />
     </Stack.Navigator>
   );
 }
@@ -208,6 +222,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null);
+  const [emailVerified, setEmailVerified] = useState(false);
 
   useEffect(() => {
     let roleUnsubscribe = null;
@@ -221,6 +236,7 @@ export default function App() {
 
       if (firebaseUser) {
         setUser(firebaseUser);
+        setEmailVerified(firebaseUser.emailVerified);
         // Use onValue (real-time listener) instead of get() so that if
         // onAuthStateChanged fires before the DB write completes (race
         // condition during signup), the role still updates once the
@@ -238,9 +254,28 @@ export default function App() {
             setIsLoading(false);
           }
         );
+
+        // Also poll for email verification status changes
+        const verifyPoll = setInterval(async () => {
+          try {
+            await firebaseUser.reload();
+            if (firebaseUser.emailVerified) {
+              setEmailVerified(true);
+              clearInterval(verifyPoll);
+            }
+          } catch (e) { /* silent */ }
+        }, 3000);
+
+        // Store interval for cleanup
+        const originalUnsubscribe = roleUnsubscribe;
+        roleUnsubscribe = () => {
+          originalUnsubscribe();
+          clearInterval(verifyPoll);
+        };
       } else {
         setRole(null);
         setUser(null);
+        setEmailVerified(false);
         setIsLoading(false);
       }
     });
@@ -263,6 +298,8 @@ export default function App() {
     <NavigationContainer>
       {!user || !role ? (
         <AuthStack />
+      ) : !emailVerified ? (
+        <VerificationStack />
       ) : role === "patient" ? (
         <PatientStack />
       ) : role === "admin" ? (

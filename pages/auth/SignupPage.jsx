@@ -1,61 +1,37 @@
-// pages/SignupPage.js (Updated for multiple specializations)
+// pages/SignupPage.js
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { useState, useEffect } from "react";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from "firebase/auth";
 import { ref, set, onValue } from "firebase/database";
 import { auth, database } from "../../config/firebase";
 import { FormInput } from "../../components/FormInput";
 import { FormDropdown } from "../../components/FormDropdown";
-import { DayPicker } from "../../components/DayPicker";
 import { SectionDivider } from "../../components/SectionDivider";
 
 const SignUpPage = () => {
     const navigation = useNavigation();
     const [loading, setLoading] = useState(false);
     const [userRole, setUserRole] = useState("patient");
-    const [hospitals, setHospitals] = useState([]);
 
-    useEffect(() => {
-        const hRef = ref(database, "hospitals");
-        const unsub = onValue(hRef, snapshot => {
-            const res = [];
-            if (snapshot.exists()) {
-                snapshot.forEach(child => {
-                    const hospital = child.val();
-                    if (hospital.name) res.push(hospital.name);
-                });
-            }
-            setHospitals(res);
-        });
-        return unsub;
-    }, []);
-    
     // Common fields
     const [fullName, setFullName] = useState("");
     const [email, setEmail] = useState("");
-    const [phone, setPhone] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     
-    // Doctor-specific fields
+    // Doctor-specific fields (simplified — no affiliation, no fee, no schedule)
     const [selectedSpecializations, setSelectedSpecializations] = useState([]);
     const [selectedLanguages, setSelectedLanguages] = useState([]);
     const [medicalLicense, setMedicalLicense] = useState("");
-    const [hospitalAffiliation, setHospitalAffiliation] = useState("");
     const [experience, setExperience] = useState("");
-    const [consultationFee, setConsultationFee] = useState("");
     const [bio, setBio] = useState("");
-    const [workingDays, setWorkingDays] = useState([]);
-    const [startTime, setStartTime] = useState("");
-    const [endTime, setEndTime] = useState("");
     const [education, setEducation] = useState("");
-    const [services, setServices] = useState("");
 
-    // Dropdown options (I should really remove some of these)
+    // Dropdown options
     const specializations = [
         "Cardiologist", "Interventional Cardiologist", "Pediatric Cardiologist",
         "Neurologist", "Neurosurgeon", "Pediatric Neurologist",
@@ -107,14 +83,8 @@ const SignUpPage = () => {
         );
     };
 
-    const toggleWorkingDay = (day) => {
-        setWorkingDays(prev => 
-            prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
-        );
-    };
-
     const validateForm = () => {
-        if (!fullName || !email || !phone || !password || !confirmPassword) {
+        if (!fullName || !email || !password || !confirmPassword) {
             Alert.alert("Error", "Please fill in all required fields");
             return false;
         }
@@ -127,8 +97,8 @@ const SignUpPage = () => {
             return false;
         }
         if (userRole === "doctor") {
-            if (selectedSpecializations.length === 0 || !medicalLicense || !hospitalAffiliation || !experience || !consultationFee) {
-                Alert.alert("Error", "Please fill in all doctor information");
+            if (selectedSpecializations.length === 0 || !medicalLicense || !experience) {
+                Alert.alert("Error", "Please fill in all required doctor information");
                 return false;
             }
             const expNum = parseInt(experience);
@@ -136,16 +106,10 @@ const SignUpPage = () => {
                 Alert.alert("Error", "Please enter valid years of experience");
                 return false;
             }
-            const feeNum = parseInt(consultationFee);
-            if (isNaN(feeNum) || feeNum < 0) {
-                Alert.alert("Error", "Please enter valid consultation fee");
-                return false;
-            }
         }
         return true;
     };
 
-    // Claude said to add a fallback if write to database after createUserWithEmailAndPassword succeeds but set(ref, val) fails.
     const handleSignUp = async () => {
         if (!validateForm()) return;
 
@@ -158,33 +122,27 @@ const SignUpPage = () => {
                 await updateProfile(user, { displayName: fullName });
                 await user.reload();
                 
+                // Send email verification
+                await sendEmailVerification(user);
+                
                 const userData = {
                     role: userRole,
                     fullName,
                     email,
-                    phone,
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
                 };
                 
-                let doctorData = null;
                 if (userRole === "doctor"){
-                    doctorData = {
+                    const doctorData = {
                         fullName,
-                        phone,
                         specializations: selectedSpecializations,
                         primarySpecialization: selectedSpecializations[0] || "",
                         languages: selectedLanguages,
                         medicalLicense,
-                        hospitalAffiliation,
                         experience: parseInt(experience),
-                        consultationFee: parseInt(consultationFee),
                         bio,
-                        workingDays,
-                        startTime: startTime || "09:00 AM",
-                        endTime: endTime || "05:00 PM",
                         education,
-                        services,
                         isVerified: false,
                         rating: 0,
                         totalRatings: 0,
@@ -197,8 +155,8 @@ const SignUpPage = () => {
                 await set(userRef, userData);
                 
                 Alert.alert("Success", userRole === "doctor" 
-                    ? "Doctor account created! Pending admin verification." 
-                    : "Account created successfully!");
+                    ? "Doctor account created! Please verify your email. Your profile is pending admin approval." 
+                    : "Account created! Please check your email to verify your account.");
             } catch (dbError) {
                 // Critical Fix: If database write fails, delete the auth user to prevent orphaned accounts
                 await user.delete().catch(() => {}); // ignore delete errors
@@ -219,8 +177,16 @@ const SignUpPage = () => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <KeyboardAvoidingView style={styles.keyboardView} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <KeyboardAvoidingView 
+                style={styles.keyboardView} 
+                behavior={Platform.OS === "ios" ? "padding" : undefined}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+            >
+                <ScrollView 
+                    contentContainerStyle={styles.scrollContent} 
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                >
                     <View style={styles.contentContainer}>
                         <View style={styles.logoContainer}>
                             <Text style={styles.logoText}>MediConnect</Text>
@@ -242,7 +208,6 @@ const SignUpPage = () => {
                             {/* Common Fields */}
                             <FormInput label="Full Name" icon="person-outline" placeholder="Full Name" value={fullName} onChangeText={setFullName} required />
                             <FormInput label="Email" icon="mail-outline" placeholder="email@example.com" value={email} onChangeText={setEmail} keyboardType="email-address" required />
-                            <FormInput label="Phone Number" icon="call-outline" placeholder="+92 XXX XXXXXXX" value={phone} onChangeText={setPhone} keyboardType="phone-pad" required />
 
                             {/* Doctor Fields */}
                             {userRole === "doctor" && (
@@ -283,40 +248,17 @@ const SignUpPage = () => {
                                     
                                     <FormInput label="Medical License Number" icon="card-outline" placeholder="License Number" value={medicalLicense} onChangeText={setMedicalLicense} required />
                                     
-                                    <FormDropdown 
-                                        label="Hospital/Clinic Affiliation" 
-                                        icon="business-outline" 
-                                        placeholder="Select Hospital" 
-                                        value={hospitalAffiliation} 
-                                        onSelect={setHospitalAffiliation} 
-                                        options={hospitals} 
-                                        required 
-                                    />
-                                    
-                                    <View style={styles.rowContainer}>
-                                        <View style={{ flex: 1 }}>
-                                            <FormInput label="Experience (write in years)" icon="time-outline" placeholder="10" value={experience} onChangeText={setExperience} keyboardType="numeric" required />
-                                        </View>
-                                        <View style={{ flex: 1 }}>
-                                            <FormInput label="Consultation Fee (PKR)" icon="cash-outline" placeholder="2000" value={consultationFee} onChangeText={setConsultationFee} keyboardType="numeric" required />
-                                        </View>
-                                    </View>
+                                    <FormInput label="Experience (years)" icon="time-outline" placeholder="e.g. 10" value={experience} onChangeText={setExperience} keyboardType="numeric" required />
                                     
                                     <FormInput label="Education" icon="school-outline" placeholder="MBBS, FCPS, etc." value={education} onChangeText={setEducation} />
                                     
-                                    <DayPicker selectedDays={workingDays} onToggleDay={toggleWorkingDay} label="Working Days" />
-                                    
-                                    <View style={styles.rowContainer}>
-                                        <View style={{ flex: 1 }}>
-                                            <FormInput label="Start Time" icon="time-outline" placeholder="09:00 AM" value={startTime} onChangeText={setStartTime} />
-                                        </View>
-                                        <View style={{ flex: 1 }}>
-                                            <FormInput label="End Time" icon="time-outline" placeholder="05:00 PM" value={endTime} onChangeText={setEndTime} />
-                                        </View>
-                                    </View>
-                                    
-                                    <FormInput label="Services Offered" icon="list-outline" placeholder="Heart Checkup, ECG, Surgery" value={services} onChangeText={setServices} multiline />
                                     <FormInput label="Bio / Introduction" icon="document-text-outline" placeholder="Brief introduction about yourself" value={bio} onChangeText={setBio} multiline />
+
+                                    <View style={styles.infoBox}>
+                                        <Text style={styles.infoBoxText}>
+                                            ℹ️  After admin approval, you can add hospital affiliations, set your availability schedule, and consultation fees.
+                                        </Text>
+                                    </View>
                                 </>
                             )}
 
@@ -356,6 +298,11 @@ const styles = StyleSheet.create({
     rowContainer: { flexDirection: "row", gap: 12 },
     selectedCountContainer: { marginTop: -8, marginBottom: 8, paddingHorizontal: 4 },
     selectedCountText: { fontSize: 11, color: "#1a40c2", fontWeight: "500" },
+    infoBox: { 
+        backgroundColor: "#E6F1FB", borderRadius: 12, padding: 14, marginTop: 8, marginBottom: 4,
+        borderLeftWidth: 3, borderLeftColor: "#1a40c2",
+    },
+    infoBoxText: { fontSize: 12, color: "#444654", lineHeight: 18 },
     signUpButton: { backgroundColor: "#1a40c2", borderRadius: 9999, paddingVertical: 12, alignItems: "center", marginTop: 8, elevation: 3 },
     signUpButtonText: { color: "#ffffff", fontSize: 14, fontWeight: "600" },
     loginContainer: { marginTop: 20, alignItems: "center" },

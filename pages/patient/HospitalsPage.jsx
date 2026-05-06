@@ -45,7 +45,7 @@ const HospitalsPage = () => {
             <View style={styles.searchContainer}>
                  <SearchBar placeholder="Search hospitals..." value={searchQuery} onChangeText={setSearchQuery} />
             </View>
-            <ScrollView style={styles.content} contentContainerStyle={{padding: 20, gap: 12}}>
+            <ScrollView style={styles.content} contentContainerStyle={{padding: 20, gap: 12}} keyboardShouldPersistTaps="handled">
                 {loading ? <ActivityIndicator size="large" color="#1a40c2" style={{marginTop: 20}} /> :
                     filteredHospitals.length === 0 ? (
                         <View style={styles.emptyContainer}>

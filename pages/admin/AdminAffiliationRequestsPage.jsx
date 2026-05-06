@@ -105,6 +105,10 @@ const AdminAffiliationRequestsPage = () => {
                     <Ionicons name="time-outline" size={16} color="#747686" />
                     <Text style={styles.scheduleText}>{item.startTime} - {item.endTime}</Text>
                 </View>
+                <View style={styles.scheduleItem}>
+                    <Ionicons name="cash-outline" size={16} color="#747686" />
+                    <Text style={styles.scheduleText}>PKR {item.consultationFee}</Text>
+                </View>
             </View>
 
             <View style={styles.actionsRow}>

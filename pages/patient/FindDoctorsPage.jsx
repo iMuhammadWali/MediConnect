@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, FlatList, ToastAndroid } from "react-native";
+import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, FlatList, ToastAndroid, KeyboardAvoidingView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from '@expo/vector-icons';
@@ -68,7 +68,7 @@ const FindDoctorsPage = () => {
                 setDoctors(doctorsList);
             }
         } catch(e){
-            console.error("Error fetching doctors:", error);
+            console.error("Error fetching doctors:", e);
             ToastAndroid.show("Error", ToastAndroid.SHORT);
         } finally {
             setLoading(false);
@@ -96,7 +96,7 @@ const FindDoctorsPage = () => {
             <View style={styles.doctorInfo}>
                 <Text style={styles.doctorName} numberOfLines={1}>{item.name}</Text>
                 <Text style={styles.doctorDetails} numberOfLines={1}>
-                    {item.specialty} • {item.hospitalAffiliation}
+                    {item.primarySpecialization}
                 </Text>
                 <View style={styles.ratingContainer}>
                     <Ionicons name="star" size={14} color="#F39C12" />
@@ -113,42 +113,48 @@ const FindDoctorsPage = () => {
     );
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView 
-                style={styles.scrollView}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scrollContent}>
-                
-                {/* Search Input */}
-                <View style={styles.searchContainer}>
-                    <Ionicons name="search" size={20} color="#747686" style={styles.searchIcon} />
-                    <TextInput
-                        style={styles.searchInput}
-                        placeholder="Search doctors, hospitals..."
-                        placeholderTextColor="#747686"
-                    />
-                </View>
+            <KeyboardAvoidingView 
+                style={{ flex: 1 }} 
+                behavior={Platform.OS === "ios" ? "padding" : undefined}
+            >
+                <ScrollView 
+                    style={styles.scrollView}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                    contentContainerStyle={styles.scrollContent}>
+                    
+                    {/* Search Input */}
+                    <View style={styles.searchContainer}>
+                        <Ionicons name="search" size={20} color="#747686" style={styles.searchIcon} />
+                        <TextInput
+                            style={styles.searchInput}
+                            placeholder="Search doctors, hospitals..."
+                            placeholderTextColor="#747686"
+                        />
+                    </View>
 
-                {/* Filters */}
-                <FlatList
-                    data={filterCategories}
-                    renderItem={renderFilterChip}
-                    keyExtractor={(item) => item.id.toString()}
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.filtersList}
-                />
-
-                {/* Doctor List */}
-                <View style={styles.doctorsSection}>
+                    {/* Filters */}
                     <FlatList
-                        data={doctors}
-                        renderItem={renderDoctorCard}
+                        data={filterCategories}
+                        renderItem={renderFilterChip}
                         keyExtractor={(item) => item.id.toString()}
-                        scrollEnabled={false}
-                        contentContainerStyle={styles.doctorsList}
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.filtersList}
                     />
-                </View>
-            </ScrollView>
+
+                    {/* Doctor List */}
+                    <View style={styles.doctorsSection}>
+                        <FlatList
+                            data={doctors}
+                            renderItem={renderDoctorCard}
+                            keyExtractor={(item) => item.id.toString()}
+                            scrollEnabled={false}
+                            contentContainerStyle={styles.doctorsList}
+                        />
+                    </View>
+                </ScrollView>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 };

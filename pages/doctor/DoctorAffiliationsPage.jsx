@@ -8,10 +8,7 @@ import { database, auth } from "../../config/firebase";
 
 const DoctorAffiliationsPage = () => {
     const navigation = useNavigation();
-    const [primaryAffiliation, setPrimaryAffiliation] = useState("");
-    const [primaryDays, setPrimaryDays] = useState([]);
-    const [primaryStart, setPrimaryStart] = useState("");
-    const [primaryEnd, setPrimaryEnd] = useState("");
+    const [isVerified, setIsVerified] = useState(false);
     const [detailedAffiliations, setDetailedAffiliations] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -23,10 +20,7 @@ const DoctorAffiliationsPage = () => {
         const unsubDoc = onValue(docRef, snapshot => {
             if (snapshot.exists()) {
                 const data = snapshot.val();
-                setPrimaryAffiliation(data.hospitalAffiliation || "No Primary Hospital");
-                setPrimaryDays(data.workingDays || []);
-                setPrimaryStart(data.startTime || "");
-                setPrimaryEnd(data.endTime || "");
+                setIsVerified(data.isVerified === true);
                 
                 if (data.detailedAffiliations) {
                     const affils = Object.entries(data.detailedAffiliations).map(([key, val]) => ({
@@ -76,6 +70,18 @@ const DoctorAffiliationsPage = () => {
         }
     };
 
+    const handleRequestAffiliation = () => {
+        if (!isVerified) {
+            Alert.alert(
+                "Approval Required", 
+                "You need admin approval before you can add hospital affiliations. Please wait for your profile to be approved.",
+                [{ text: "OK" }]
+            );
+            return;
+        }
+        navigation.navigate("RequestAffiliation");
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
@@ -90,72 +96,79 @@ const DoctorAffiliationsPage = () => {
                     <ActivityIndicator size="large" color="#1a40c2" style={{ marginTop: 40 }} />
                 ) : (
                     <>
-                        <Text style={styles.sectionTitle}>Primary Affiliation</Text>
-                        <View style={styles.card}>
-                            <View style={styles.hospitalHeader}>
-                                <Ionicons name="business" size={24} color="#1a40c2" />
-                                <View style={styles.hospitalInfo}>
-                                    <Text style={styles.hospitalName}>{primaryAffiliation}</Text>
-                                    <View style={styles.primaryBadge}>
-                                        <Text style={styles.primaryBadgeText}>PRIMARY</Text>
-                                    </View>
+                        {/* Approval Gate Banner */}
+                        {!isVerified && (
+                            <View style={styles.lockedBanner}>
+                                <View style={styles.lockedIconContainer}>
+                                    <Ionicons name="lock-closed" size={28} color="#e07b00" />
                                 </View>
+                                <Text style={styles.lockedTitle}>Approval Required</Text>
+                                <Text style={styles.lockedText}>
+                                    Your profile is pending admin approval. Once approved, you'll be able to add hospital affiliations, set your availability schedule, and consultation fees.
+                                </Text>
                             </View>
-                            <View style={styles.scheduleBox}>
-                                <View style={styles.scheduleItem}>
-                                    <Ionicons name="calendar-outline" size={16} color="#747686" />
-                                    <Text style={styles.scheduleText}>{primaryDays.length > 0 ? primaryDays.join(", ") : "Not set"}</Text>
-                                </View>
-                                <View style={styles.scheduleItem}>
-                                    <Ionicons name="time-outline" size={16} color="#747686" />
-                                    <Text style={styles.scheduleText}>{(primaryStart && primaryEnd) ? `${primaryStart} - ${primaryEnd}` : "Not set"}</Text>
-                                </View>
-                            </View>
-                        </View>
-
-                        <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Other Affiliations</Text>
-                        
-                        {detailedAffiliations.length === 0 ? (
-                            <Text style={styles.emptyText}>You have no other hospital affiliations.</Text>
-                        ) : (
-                            detailedAffiliations.map(affil => {
-                                const st = getStatusStyle(affil.status);
-                                return (
-                                    <View key={affil.id} style={styles.card}>
-                                        <View style={styles.hospitalHeader}>
-                                            <Ionicons name="location-outline" size={24} color={st.color} />
-                                            <View style={styles.hospitalInfo}>
-                                                <Text style={styles.hospitalName} numberOfLines={1}>{affil.hospitalName}</Text>
-                                                <Text style={styles.addressText} numberOfLines={1}>{affil.address}</Text>
-                                            </View>
-                                            <TouchableOpacity 
-                                                style={{ padding: 4 }} 
-                                                onPress={() => handleRemove(affil.id)}
-                                            >
-                                                <Ionicons name="trash-outline" size={20} color="#ba1a1a" />
-                                            </TouchableOpacity>
-                                        </View>
-                                        
-                                        <View style={[styles.statusBanner, { backgroundColor: st.bg }]}>
-                                            <Text style={[styles.statusText, { color: st.color }]}>{st.text}</Text>
-                                        </View>
-
-                                        <View style={styles.scheduleBox}>
-                                            <View style={styles.scheduleItem}>
-                                                <Ionicons name="calendar-outline" size={16} color="#747686" />
-                                                <Text style={styles.scheduleText}>{affil.workingDays?.join(", ") || "N/A"}</Text>
-                                            </View>
-                                            <View style={styles.scheduleItem}>
-                                                <Ionicons name="time-outline" size={16} color="#747686" />
-                                                <Text style={styles.scheduleText}>{affil.startTime} - {affil.endTime}</Text>
-                                            </View>
-                                        </View>
-                                    </View>
-                                );
-                            })
                         )}
 
-                        <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate("RequestAffiliation")}>
+                        {isVerified && (
+                            <>
+                                <Text style={styles.sectionTitle}>Your Affiliations</Text>
+                                
+                                {detailedAffiliations.length === 0 ? (
+                                    <View style={styles.emptyContainer}>
+                                        <Ionicons name="business-outline" size={48} color="#c4c5d6" />
+                                        <Text style={styles.emptyTitle}>No Affiliations Yet</Text>
+                                        <Text style={styles.emptyText}>Add your hospital affiliations to start receiving appointment bookings.</Text>
+                                    </View>
+                                ) : (
+                                    detailedAffiliations.map(affil => {
+                                        const st = getStatusStyle(affil.status);
+                                        return (
+                                            <View key={affil.id} style={styles.card}>
+                                                <View style={styles.hospitalHeader}>
+                                                    <Ionicons name="location-outline" size={24} color={st.color} />
+                                                    <View style={styles.hospitalInfo}>
+                                                        <Text style={styles.hospitalName} numberOfLines={1}>{affil.hospitalName}</Text>
+                                                        <Text style={styles.addressText} numberOfLines={1}>{affil.address}</Text>
+                                                    </View>
+                                                    <TouchableOpacity 
+                                                        style={{ padding: 4 }} 
+                                                        onPress={() => handleRemove(affil.id)}
+                                                    >
+                                                        <Ionicons name="trash-outline" size={20} color="#ba1a1a" />
+                                                    </TouchableOpacity>
+                                                </View>
+                                                
+                                                <View style={[styles.statusBanner, { backgroundColor: st.bg }]}>
+                                                    <Text style={[styles.statusText, { color: st.color }]}>{st.text}</Text>
+                                                </View>
+
+                                                <View style={styles.scheduleBox}>
+                                                    <View style={styles.scheduleItem}>
+                                                        <Ionicons name="calendar-outline" size={16} color="#747686" />
+                                                        <Text style={styles.scheduleText}>{affil.workingDays?.join(", ") || "N/A"}</Text>
+                                                    </View>
+                                                    <View style={styles.scheduleItem}>
+                                                        <Ionicons name="time-outline" size={16} color="#747686" />
+                                                        <Text style={styles.scheduleText}>{affil.startTime} - {affil.endTime}</Text>
+                                                    </View>
+                                                    {affil.consultationFee && (
+                                                        <View style={styles.scheduleItem}>
+                                                            <Ionicons name="cash-outline" size={16} color="#747686" />
+                                                            <Text style={styles.scheduleText}>PKR {affil.consultationFee}</Text>
+                                                        </View>
+                                                    )}
+                                                </View>
+                                            </View>
+                                        );
+                                    })
+                                )}
+                            </>
+                        )}
+
+                        <TouchableOpacity 
+                            style={[styles.addButton, !isVerified && styles.addButtonDisabled]} 
+                            onPress={handleRequestAffiliation}
+                        >
                             <Ionicons name="add" size={20} color="#ffffff" />
                             <Text style={styles.addButtonText}>Request New Affiliation</Text>
                         </TouchableOpacity>
@@ -181,21 +194,39 @@ const styles = StyleSheet.create({
     backButton: { width: 38, height: 38, borderRadius: 19, backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" },
     headerTitle: { fontSize: 18, fontWeight: "bold", color: "#ffffff" },
     content: { flex: 1 },
+    lockedBanner: {
+        backgroundColor: "#fff8f0",
+        borderRadius: 20,
+        padding: 24,
+        alignItems: "center",
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: "rgba(224, 123, 0, 0.15)",
+    },
+    lockedIconContainer: {
+        width: 64, height: 64, borderRadius: 32,
+        backgroundColor: "rgba(224, 123, 0, 0.1)",
+        alignItems: "center", justifyContent: "center",
+        marginBottom: 16,
+    },
+    lockedTitle: { fontSize: 18, fontWeight: "bold", color: "#191c1e", marginBottom: 8 },
+    lockedText: { fontSize: 14, color: "#747686", textAlign: "center", lineHeight: 22 },
     sectionTitle: { fontSize: 18, fontWeight: "bold", color: "#191c1e", marginBottom: 12 },
+    emptyContainer: { alignItems: "center", paddingVertical: 40, gap: 8 },
+    emptyTitle: { fontSize: 18, fontWeight: "bold", color: "#191c1e" },
+    emptyText: { fontSize: 14, color: "#747686", textAlign: "center", lineHeight: 22, paddingHorizontal: 20 },
     card: { backgroundColor: "#ffffff", borderRadius: 16, padding: 16, marginBottom: 16, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
     hospitalHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
     hospitalInfo: { flex: 1 },
     hospitalName: { fontSize: 16, fontWeight: "bold", color: "#191c1e", marginBottom: 2 },
     addressText: { fontSize: 12, color: "#747686" },
-    primaryBadge: { alignSelf: "flex-start", backgroundColor: "#e6f8ef", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginTop: 4 },
-    primaryBadgeText: { fontSize: 10, fontWeight: "bold", color: "#1d8a4e", letterSpacing: 0.5 },
     statusBanner: { alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 9999, marginVertical: 12 },
     statusText: { fontSize: 11, fontWeight: "bold", textTransform: "uppercase", letterSpacing: 0.5 },
-    scheduleBox: { backgroundColor: "#f2f4f7", padding: 12, borderRadius: 12, gap: 8, marginTop: 12 },
+    scheduleBox: { backgroundColor: "#f2f4f7", padding: 12, borderRadius: 12, gap: 8, marginTop: 4 },
     scheduleItem: { flexDirection: "row", alignItems: "center", gap: 8 },
     scheduleText: { fontSize: 13, color: "#444654", fontWeight: "500" },
-    emptyText: { fontSize: 14, color: "#747686", textAlign: "center", marginVertical: 20 },
     addButton: { flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: "#1a40c2", borderRadius: 9999, paddingVertical: 16, gap: 8, marginTop: 10, marginBottom: 40, shadowColor: "#1a40c2", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 12, elevation: 4 },
+    addButtonDisabled: { backgroundColor: "#c4c5d6", shadowOpacity: 0, elevation: 0 },
     addButtonText: { color: "#ffffff", fontSize: 16, fontWeight: "bold" }
 });
 

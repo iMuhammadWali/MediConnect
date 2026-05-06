@@ -1,17 +1,24 @@
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 
-export const TopBar = ({ userName, avatarText, greeting = "Good Morning", onNotificationPress }) => {
+export const TopBar = ({ userName, avatarText, greeting = "Good Morning", onNotificationPress, statusBadge }) => {
     return (
         <View style={styles.header}>
             <View style={styles.headerLeft}>
                 <View style={styles.avatar}>
                     <Text style={styles.avatarText}>{avatarText || "A"}</Text>
                 </View>
-                <View>
+                <View style={styles.nameContainer}>
                     <Text style={styles.greeting}>{greeting}</Text>
-                    <Text style={styles.welcomeText}>Welcome Back</Text>
-                    <Text style={styles.welcomeName}>{userName}</Text>
+                    <View style={styles.nameRow}>
+                        <Text style={styles.welcomeName} numberOfLines={1}>{userName}</Text>
+                        {statusBadge && (
+                            <View style={[styles.statusBadge, { backgroundColor: statusBadge.bgColor || "rgba(255,255,255,0.2)" }]}>
+                                <View style={[styles.statusDot, { backgroundColor: statusBadge.dotColor || "#ffffff" }]} />
+                                <Text style={[styles.statusText, { color: statusBadge.textColor || "#ffffff" }]}>{statusBadge.text}</Text>
+                            </View>
+                        )}
+                    </View>
                 </View>
             </View>
             <TouchableOpacity style={styles.notificationButton} onPress={onNotificationPress}>
@@ -51,20 +58,44 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         color: "#001355",
     },
+    nameContainer: {
+        flex: 1,
+    },
     greeting: {
         fontSize: 12,
         color: "#a5b4fc",
         fontWeight: "500",
     },
-    welcomeText: {
-        fontSize: 14,
-        color: "#ffffff",
-        fontWeight: "bold",
+    nameRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        flexWrap: "wrap",
     },
     welcomeName: {
         fontSize: 18,
         fontWeight: "bold",
         color: "#ffffff",
+        flexShrink: 1,
+    },
+    statusBadge: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 5,
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 9999,
+    },
+    statusDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+    },
+    statusText: {
+        fontSize: 9,
+        fontWeight: "bold",
+        letterSpacing: 0.5,
+        textTransform: "uppercase",
     },
     notificationButton: {
         width: 40,

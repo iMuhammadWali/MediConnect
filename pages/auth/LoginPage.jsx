@@ -11,7 +11,6 @@ const LoginPage = () => {
     const navigation = useNavigation();
 
     const [loading, setLoading] = useState(false);
-    const [userRole, setUserRole] = useState("patient");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -22,7 +21,6 @@ const LoginPage = () => {
         return subscriber;
     }, []);
 
-    // TODO: Add meaningful error messages. (How to control visibility in React Native?)
     const handleLogin = async () => {
         if (!email || !password) {
             Alert.alert("Error", "Please fill in all fields");
@@ -33,7 +31,6 @@ const LoginPage = () => {
 
         try {
             await signInWithEmailAndPassword(auth, email, password);
-            Alert.alert("Success", "Logged in successfully!");
         } catch (error) {
             let errorMessage = "Login failed. Please try again.";
             switch (error.code) {
@@ -59,25 +56,19 @@ const LoginPage = () => {
         }
     };
 
-    const handleGoogleLogin = () => {
-        Alert.alert("Google Login", "Google sign-in integration would go here");
-    };
-
     const handleRegister = () => {
         navigation.replace("Signup");
     };
 
     const handleForgotPassword = () => {
         // Nothing for now.
-
-        // navigation.navigate("ForgotPassword");
     };
 
     return (
         <SafeAreaView style={styles.container}>
             <KeyboardAvoidingView 
                 style={styles.keyboardView}
-                behavior={Platform.OS === "ios" ? "padding" : "height"}>
+                behavior={Platform.OS === "ios" ? "padding" : undefined}>
                 <ScrollView 
                     contentContainerStyle={styles.scrollContent}
                     keyboardShouldPersistTaps="handled"
@@ -131,19 +122,6 @@ const LoginPage = () => {
                                     </Text>
                                 </TouchableOpacity>
                             </View>
-
-                            <SectionDivider title="or" />
-
-                            {/* Google Button */}
-                            <TouchableOpacity style={styles.googleButton} onPress={handleGoogleLogin}>
-                                <View style={styles.googleIconContainer}>
-                                    <Image 
-                                        source={{ uri: 'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png' }}
-                                        style={{ width: 18, height: 18 }}
-                                    />                            
-                                </View>
-                                <Text style={styles.googleButtonText}>Continue with Google</Text>
-                            </TouchableOpacity>
                         </View>
 
                         {/* Register Link */}
@@ -214,36 +192,6 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         color: "#717273",
     },
-    roleToggle: {
-        flexDirection: "row",
-        backgroundColor: "#eceef1",
-        borderRadius: 9999,
-        padding: 4,
-        marginBottom: 24,
-    },
-    roleButton: {
-        flex: 1,
-        paddingVertical: 8,
-        borderRadius: 9999,
-        alignItems: "center",
-    },
-    activeRoleButton: {
-        backgroundColor: "#ffffff",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 1,
-    },
-    roleButtonText: {
-        fontSize: 13,
-        fontWeight: "500",
-        color: "#444654",
-    },
-    activeRoleButtonText: {
-        color: "#1a40c2",
-        fontWeight: "600",
-    },
     form: {
         gap: 14,
     },
@@ -268,28 +216,6 @@ const styles = StyleSheet.create({
         color: "#ffffff",
         fontSize: 14,
         fontWeight: "600",
-    },
-    googleButton: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 10,
-        backgroundColor: "#ffffff",
-        borderWidth: 1,
-        borderColor: "rgba(196, 197, 214, 0.3)",
-        borderRadius: 9999,
-        paddingVertical: 12,
-    },
-    googleIconContainer: {
-        width: 18,
-        height: 18,
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    googleButtonText: {
-        fontSize: 13,
-        fontWeight: "500",
-        color: "#191c1e",
     },
     registerContainer: {
         marginTop: 24,

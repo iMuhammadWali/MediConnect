@@ -12,6 +12,8 @@ const ChatPage = () => {
     const { otherUid, otherName } = route.params || {};
     const [messages, setMessages] = useState([]);
     const [text, setText] = useState("");
+    const [hasPermission, setHasPermission] = useState(false);
+    const [checkingPermission, setCheckingPermission] = useState(true);
     const flatListRef = useRef();
 
     const currentUid = auth.currentUser?.uid;
@@ -19,8 +21,37 @@ const ChatPage = () => {
         ? (currentUid < otherUid ? `${currentUid}_${otherUid}` : `${otherUid}_${currentUid}`)
         : null;
 
+    // Check permission: must have a paid appointment between these two users
     useEffect(() => {
-        if (!chatId) return;
+        const uid = auth.currentUser?.uid;
+        if (!uid || !otherUid) {
+            setCheckingPermission(false);
+            return;
+        }
+
+        const appRef = ref(database, "appointments");
+        const unsub = onValue(appRef, snapshot => {
+            let allowed = false;
+            if (snapshot.exists()) {
+                snapshot.forEach(c => {
+                    const data = c.val();
+                    if (data.paid === true) {
+                        if ((data.patientId === uid && data.doctorId === otherUid) ||
+                            (data.doctorId === uid && data.patientId === otherUid)) {
+                            allowed = true;
+                        }
+                    }
+                });
+            }
+            setHasPermission(allowed);
+            setCheckingPermission(false);
+        }, { onlyOnce: true });
+
+        return () => unsub();
+    }, [otherUid]);
+
+    useEffect(() => {
+        if (!chatId || !hasPermission) return;
         const msgRef = ref(database, `chats/${chatId}/messages`);
         const unsub = onValue(msgRef, snapshot => {
             const data = snapshot.val();
@@ -33,7 +64,7 @@ const ChatPage = () => {
             setMessages(msgs);
         });
         return unsub;
-    }, [chatId]);
+    }, [chatId, hasPermission]);
 
     const handleSend = async () => {
         if (!text.trim()) return;
@@ -68,6 +99,34 @@ const ChatPage = () => {
         );
     };
 
+    if (checkingPermission) {
+        return (
+            <SafeAreaView style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+                <Text style={{ color: "#747686" }}>Checking access...</Text>
+            </SafeAreaView>
+        );
+    }
+
+    if (!hasPermission) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={styles.header}>
+                    <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                        <Ionicons name="arrow-back" size={22} color="#ffffff" />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>{otherName || "Chat"}</Text>
+                </View>
+                <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 32 }}>
+                    <Ionicons name="lock-closed" size={48} color="#c4c5d6" />
+                    <Text style={{ fontSize: 18, fontWeight: "bold", color: "#191c1e", marginTop: 16, textAlign: "center" }}>Chat Locked</Text>
+                    <Text style={{ fontSize: 14, color: "#747686", textAlign: "center", marginTop: 8, lineHeight: 22 }}>
+                        You need a paid appointment with this person to start chatting.
+                    </Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
@@ -76,7 +135,7 @@ const ChatPage = () => {
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>{otherName || "Chat"}</Text>
             </View>
-            <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+            <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
                 <FlatList
                     ref={flatListRef}
                     data={[...messages].reverse()}

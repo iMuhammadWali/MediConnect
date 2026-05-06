@@ -11,6 +11,7 @@ const DoctorDashboardPage = () => {
     const navigation = useNavigation();
 
     const [doctorName, setDoctorName] = useState("Doctor");
+    const [isVerified, setIsVerified] = useState(false);
     const [appointments, setAppointments] = useState([]);
     const [patientsMap, setPatientsMap] = useState({});
     
@@ -21,7 +22,9 @@ const DoctorDashboardPage = () => {
         const docRef = ref(database, `doctors/${uid}`);
         const unsubDoc = onValue(docRef, snapshot => {
             if (snapshot.exists()) {
-                setDoctorName(snapshot.val().fullName);
+                const data = snapshot.val();
+                setDoctorName(data.fullName);
+                setIsVerified(data.isVerified === true);
             }
         });
 
@@ -61,6 +64,13 @@ const DoctorDashboardPage = () => {
         { id: 2, title: "Total Patients", value: totalPatients.toString(), icon: "people-outline", color: "#E6F1FB", iconColor: "#1a40c2" },
         { id: 3, title: "Completed", value: appointments.filter(a => a.status === "Completed").length.toString(), icon: "checkmark-circle-outline", color: "#E6F1FB", iconColor: "#1a40c2" },
     ];
+
+    const getApprovalBadge = () => {
+        if (isVerified) {
+            return { text: "Approved", dotColor: "#34d399", bgColor: "rgba(52, 211, 153, 0.2)", textColor: "#d1fae5" };
+        }
+        return { text: "Pending", dotColor: "#fbbf24", bgColor: "rgba(251, 191, 36, 0.25)", textColor: "#fef3c7" };
+    };
 
     const StatCard = ({ title, value, icon, color, iconColor }) => (
         <View style={[styles.statCard, { backgroundColor: color }]}>
@@ -102,7 +112,19 @@ const DoctorDashboardPage = () => {
                 avatarText={doctorName.replace("Dr. ", "").substring(0, 2).toUpperCase() || "DR"}
                 greeting="Good Morning"
                 onNotificationPress={() => {}}
+                statusBadge={getApprovalBadge()}
             />
+
+            {/* Pending approval banner */}
+            {!isVerified && (
+                <View style={styles.pendingBanner}>
+                    <Ionicons name="information-circle" size={18} color="#92400e" />
+                    <Text style={styles.pendingBannerText}>
+                        Your profile is pending admin approval. You can add affiliations once approved.
+                    </Text>
+                </View>
+            )}
+
             <ScrollView 
                 style={styles.scrollView}
                 showsVerticalScrollIndicator={false}
@@ -123,7 +145,23 @@ const DoctorDashboardPage = () => {
                         onPress={() => navigation.navigate("DoctorAffiliations")}
                     >
                         <Ionicons name="business" size={24} color="#1a40c2" />
-                        <Text style={styles.quickActionText}>Manage Affiliations</Text>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.quickActionText}>Manage Affiliations</Text>
+                            <Text style={styles.quickActionSubtext}>Hospitals & schedules</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color="#c4c5d6" />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity 
+                        style={styles.quickActionButton}
+                        onPress={() => navigation.navigate("DoctorPrescriptions")}
+                    >
+                        <Ionicons name="document-text" size={24} color="#1a40c2" />
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.quickActionText}>Prescriptions</Text>
+                            <Text style={styles.quickActionSubtext}>Manage patient prescriptions</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color="#c4c5d6" />
                     </TouchableOpacity>
                 </View>
 
@@ -174,6 +212,25 @@ const styles = StyleSheet.create({
     scrollContent: {
         paddingBottom: 24,
     },
+    pendingBanner: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        backgroundColor: "#fef3c7",
+        marginHorizontal: 20,
+        marginTop: 12,
+        padding: 12,
+        borderRadius: 12,
+        borderLeftWidth: 3,
+        borderLeftColor: "#f59e0b",
+    },
+    pendingBannerText: {
+        flex: 1,
+        fontSize: 12,
+        color: "#92400e",
+        lineHeight: 18,
+        fontWeight: "500",
+    },
     statsSection: {
         flexDirection: "row",
         paddingHorizontal: 20,
@@ -211,6 +268,7 @@ const styles = StyleSheet.create({
     quickActionsSection: {
         paddingHorizontal: 20,
         marginTop: 16,
+        gap: 10,
     },
     quickActionButton: {
         flexDirection: "row",
@@ -229,6 +287,11 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: "bold",
         color: "#191c1e",
+    },
+    quickActionSubtext: {
+        fontSize: 12,
+        color: "#747686",
+        marginTop: 2,
     },
     scheduleHeader: {
         flexDirection: "row",

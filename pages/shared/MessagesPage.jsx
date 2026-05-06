@@ -8,34 +8,95 @@ import { database, auth } from "../../config/firebase";
 
 const MessagesPage = () => {
     const navigation = useNavigation();
-    const [users, setUsers] = useState([]);
+    const [chatUsers, setChatUsers] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [currentRole, setCurrentRole] = useState(null);
 
     useEffect(() => {
-        const uRef = ref(database, "users");
-        const unsub = onValue(uRef, snapshot => {
-            const res = [];
-            if (snapshot.exists()) {
-                snapshot.forEach(c => {
-                    if (c.key !== auth.currentUser?.uid && c.val().role !== "admin") {
-                        res.push({ uid: c.key, ...c.val() });
+        const uid = auth.currentUser?.uid;
+        if (!uid) { setLoading(false); return; }
+
+        // First, get current user's role
+        const userRef = ref(database, `users/${uid}`);
+        const unsubUser = onValue(userRef, userSnap => {
+            if (userSnap.exists()) {
+                setCurrentRole(userSnap.val().role);
+            }
+        });
+
+        // Listen to appointments to find chat-eligible users
+        const appRef = ref(database, "appointments");
+        const unsubApps = onValue(appRef, appSnap => {
+            const eligibleUids = new Set();
+            if (appSnap.exists()) {
+                appSnap.forEach(c => {
+                    const data = c.val();
+                    // Only paid appointments create chat eligibility
+                    if (data.paid === true) {
+                        if (data.patientId === uid) {
+                            eligibleUids.add(data.doctorId);
+                        } else if (data.doctorId === uid) {
+                            eligibleUids.add(data.patientId);
+                        }
                     }
                 });
             }
-            setUsers(res);
-            setLoading(false);
+
+            if (eligibleUids.size === 0) {
+                setChatUsers([]);
+                setLoading(false);
+                return;
+            }
+
+            // Fetch user details for eligible UIDs
+            const usersRef = ref(database, "users");
+            const unsubUsers = onValue(usersRef, usersSnap => {
+                const users = [];
+                if (usersSnap.exists()) {
+                    usersSnap.forEach(child => {
+                        if (eligibleUids.has(child.key)) {
+                            users.push({ uid: child.key, ...child.val() });
+                        }
+                    });
+                }
+
+                // Also fetch doctor names if available
+                const doctorsRef = ref(database, "doctors");
+                onValue(doctorsRef, docSnap => {
+                    const enriched = users.map(u => {
+                        if (u.role === "doctor" && docSnap.exists()) {
+                            const docData = docSnap.child(u.uid).val();
+                            if (docData) {
+                                return { ...u, fullName: docData.fullName || u.fullName, specialization: docData.primarySpecialization };
+                            }
+                        }
+                        return u;
+                    });
+                    setChatUsers(enriched);
+                    setLoading(false);
+                }, { onlyOnce: true });
+            }, { onlyOnce: true });
         });
-        return unsub;
+
+        return () => { unsubUser(); unsubApps(); };
     }, []);
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
             <ScrollView style={styles.content} contentContainerStyle={{padding: 20, gap: 12}}>
                 {loading ? <ActivityIndicator size="large" color="#1a40c2" /> :
-                    users.length === 0 ? (
-                        <Text style={styles.emptyText}>No users to chat with</Text>
+                    chatUsers.length === 0 ? (
+                        <View style={styles.emptyContainer}>
+                            <Ionicons name="chatbubbles-outline" size={56} color="#c4c5d6" />
+                            <Text style={styles.emptyTitle}>No Conversations</Text>
+                            <Text style={styles.emptyText}>
+                                {currentRole === "patient" 
+                                    ? "Book an appointment with a doctor to start chatting." 
+                                    : "Your patients will appear here after they book an appointment."}
+                            </Text>
+                        </View>
                     ) :
-                    users.map(u => {
+                    chatUsers.map(u => {
                         const initials = u.fullName ? u.fullName.substring(0, 2).toUpperCase() : "U";
                         return (
                         <TouchableOpacity key={u.uid} style={styles.userCard} onPress={() => navigation.navigate("ChatPage", { otherUid: u.uid, otherName: u.fullName })}>
@@ -44,7 +105,9 @@ const MessagesPage = () => {
                             </View>
                             <View style={styles.userInfo}>
                                 <Text style={styles.userName}>{u.fullName}</Text>
-                                <Text style={styles.userRole}>{u.role}</Text>
+                                <Text style={styles.userRole}>
+                                    {u.role === "doctor" && u.specialization ? u.specialization : u.role}
+                                </Text>
                             </View>
                             <Ionicons name="chatbubble-outline" size={20} color="#1a40c2" />
                         </TouchableOpacity>
@@ -57,16 +120,10 @@ const MessagesPage = () => {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: "#f7f9fc" },
-    header: {
-        backgroundColor: "#1a40c2",
-        paddingHorizontal: 24,
-        paddingVertical: 16,
-        borderBottomLeftRadius: 32,
-        borderBottomRightRadius: 32,
-    },
-    headerTitle: { fontSize: 20, fontWeight: "bold", color: "#ffffff" },
     content: { flex: 1 },
-    emptyText: { textAlign: "center", color: "#717273", marginTop: 20 },
+    emptyContainer: { alignItems: "center", justifyContent: "center", paddingVertical: 60, gap: 8 },
+    emptyTitle: { fontSize: 20, fontWeight: "bold", color: "#191c1e", marginTop: 8 },
+    emptyText: { fontSize: 14, color: "#717273", textAlign: "center", lineHeight: 22, paddingHorizontal: 20 },
     userCard: {
         backgroundColor: "#ffffff",
         borderRadius: 16,

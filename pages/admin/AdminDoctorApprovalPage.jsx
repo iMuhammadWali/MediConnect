@@ -37,7 +37,6 @@ const AdminDoctorApprovalPage = () => {
                 doctorData = snapshot.val();
                 mergeAndSet();
             } else {
-                // If removed, go back
                 navigation.goBack();
             }
         });
@@ -142,6 +141,7 @@ const AdminDoctorApprovalPage = () => {
                 {/* Info Area */}
                 <View style={styles.mainContent}>
                     
+                    {/* Contact Info */}
                     <View style={styles.infoCard}>
                         <Text style={styles.sectionTitle}>Contact & System Info</Text>
                         <View style={styles.infoRow}>
@@ -149,36 +149,40 @@ const AdminDoctorApprovalPage = () => {
                             <Text style={styles.infoText}>{userEmail || "No email found"}</Text>
                         </View>
                         <View style={styles.infoRow}>
-                            <Ionicons name="call-outline" size={18} color="#747686" />
-                            <Text style={styles.infoText}>{doctor.phoneNumber || "No phone provided"}</Text>
-                        </View>
-                        <View style={styles.infoRow}>
                             <Ionicons name="finger-print-outline" size={18} color="#747686" />
                             <Text style={styles.infoText}>UID: {doctorUid}</Text>
                         </View>
                     </View>
 
+                    {/* Professional Info — No affiliation or schedule (doctor adds after approval) */}
                     <View style={styles.infoCard}>
                         <Text style={styles.sectionTitle}>Professional Info</Text>
                         
                         <View style={styles.infoRow}>
-                            <Ionicons name="business-outline" size={18} color="#747686" />
-                            <Text style={styles.infoText}>Primary Hospital: {doctor.hospitalAffiliation || "None provided"}</Text>
+                            <Ionicons name="card-outline" size={18} color="#747686" />
+                            <Text style={styles.infoText}>License: {doctor.medicalLicense || "Not provided"}</Text>
                         </View>
-                        {doctor.affiliations && doctor.affiliations.length > 0 && (
+
+                        {doctor.specializations && doctor.specializations.length > 0 && (
                             <View style={styles.infoRow}>
-                                <Ionicons name="business-outline" size={18} color="#747686" />
-                                <Text style={styles.infoText}>Other Affiliations: {doctor.affiliations.join(", ")}</Text>
+                                <Ionicons name="medkit-outline" size={18} color="#747686" />
+                                <Text style={styles.infoText}>{doctor.specializations.join(", ")}</Text>
                             </View>
                         )}
-                        <View style={styles.infoRow}>
-                            <Ionicons name="time-outline" size={18} color="#747686" />
-                            <Text style={styles.infoText}>
-                                {doctor.workingDays?.length > 0 ? doctor.workingDays.join(", ") : "Days not specified"}
-                                {" • "}
-                                {doctor.startTime || "N/A"} - {doctor.endTime || "N/A"}
-                            </Text>
-                        </View>
+
+                        {doctor.languages && doctor.languages.length > 0 && (
+                            <View style={styles.infoRow}>
+                                <Ionicons name="language-outline" size={18} color="#747686" />
+                                <Text style={styles.infoText}>{doctor.languages.join(", ")}</Text>
+                            </View>
+                        )}
+
+                        {doctor.education && (
+                            <View style={styles.infoRow}>
+                                <Ionicons name="school-outline" size={18} color="#747686" />
+                                <Text style={styles.infoText}>{doctor.education}</Text>
+                            </View>
+                        )}
 
                         <View style={[styles.statsContainer, { marginTop: 12 }]}>
                             <View style={styles.statBox}>
@@ -196,10 +200,19 @@ const AdminDoctorApprovalPage = () => {
                         </View>
                     </View>
 
+                    {/* Bio */}
                     <View style={styles.infoCard}>
                         <Text style={styles.sectionTitle}>Biography</Text>
                         <Text style={styles.aboutText}>
                             {doctor.bio || "No biography provided by the doctor."}
+                        </Text>
+                    </View>
+
+                    {/* Note about affiliations */}
+                    <View style={styles.noteCard}>
+                        <Ionicons name="information-circle-outline" size={18} color="#1a40c2" />
+                        <Text style={styles.noteText}>
+                            Hospital affiliations and schedules are added by the doctor after approval.
                         </Text>
                     </View>
 
@@ -305,6 +318,15 @@ const styles = StyleSheet.create({
     statValue: { fontSize: 18, fontWeight: "bold", color: "#191c1e", marginBottom: 4 },
     statLabel: { fontSize: 12, color: "#747686" },
     aboutText: { fontSize: 14, lineHeight: 24, color: "#444654" },
+    noteCard: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        backgroundColor: "#E6F1FB",
+        padding: 14,
+        borderRadius: 12,
+    },
+    noteText: { flex: 1, fontSize: 13, color: "#444654", lineHeight: 18 },
     bottomBar: {
         position: "absolute",
         bottom: 0,
