@@ -71,7 +71,7 @@ const AdminDoctorEditPage = () => {
 
     const languagesList = [
         "English", "Urdu", "Hindi", "Arabic", "Punjabi", "Pashto",
-        "Sindhi", "Balochi", "French", "German", "Chinese", "Turkish", 
+        "Sindhi", "Balochi", "French", "German", "Chinese", "Turkish",
         "Persian", "Spanish", "Russian", "Japanese", "Korean", "Italian",
         "Portuguese", "Dutch", "Swedish", "Norwegian", "Danish", "Finnish",
         "Greek", "Polish", "Czech", "Hungarian", "Romanian", "Thai",
@@ -79,23 +79,23 @@ const AdminDoctorEditPage = () => {
     ];
 
     const toggleSpecialization = (specialization) => {
-        setSelectedSpecializations(prev => 
-            prev.includes(specialization) 
-                ? prev.filter(s => s !== specialization) 
+        setSelectedSpecializations(prev =>
+            prev.includes(specialization)
+                ? prev.filter(s => s !== specialization)
                 : [...prev, specialization]
         );
     };
 
     const toggleLanguage = (language) => {
-        setSelectedLanguages(prev => 
-            prev.includes(language) 
-                ? prev.filter(l => l !== language) 
+        setSelectedLanguages(prev =>
+            prev.includes(language)
+                ? prev.filter(l => l !== language)
                 : [...prev, language]
         );
     };
 
     const toggleWorkingDay = (day) => {
-        setWorkingDays(prev => 
+        setWorkingDays(prev =>
             prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
         );
     };
@@ -185,9 +185,9 @@ const AdminDoctorEditPage = () => {
             `Are you sure you want to remove the affiliation with ${hospitalName}?`,
             [
                 { text: "Cancel", style: "cancel" },
-                { 
-                    text: "Remove", 
-                    style: "destructive", 
+                {
+                    text: "Remove",
+                    style: "destructive",
                     onPress: async () => {
                         try {
                             const affRef = ref(database, `doctors/${doctorUid}/detailedAffiliations/${affKey}`);
@@ -260,17 +260,17 @@ const AdminDoctorEditPage = () => {
 
                         <SectionDivider title="Professional Information" />
 
-                        <FormDropdown 
-                            label="Specializations" 
-                            icon="medkit-outline" 
-                            placeholder="Select Specializations (can select multiple)" 
-                            multiple 
-                            selectedItems={selectedSpecializations} 
-                            onToggleItem={toggleSpecialization} 
-                            options={specializations} 
-                            required 
+                        <FormDropdown
+                            label="Specializations"
+                            icon="medkit-outline"
+                            placeholder="Select Specializations (can select multiple)"
+                            multiple
+                            selectedItems={selectedSpecializations}
+                            onToggleItem={toggleSpecialization}
+                            options={specializations}
+                            required
                         />
-                        
+
                         {selectedSpecializations.length > 0 && (
                             <View style={styles.selectedCountContainer}>
                                 <Text style={styles.selectedCountText}>
@@ -278,20 +278,20 @@ const AdminDoctorEditPage = () => {
                                 </Text>
                             </View>
                         )}
-                        
-                        <FormDropdown 
-                            label="Languages Spoken" 
-                            icon="language-outline" 
-                            placeholder="Select Languages (can select multiple)" 
-                            multiple 
-                            selectedItems={selectedLanguages} 
-                            onToggleItem={toggleLanguage} 
-                            options={languagesList} 
-                            required 
+
+                        <FormDropdown
+                            label="Languages Spoken"
+                            icon="language-outline"
+                            placeholder="Select Languages (can select multiple)"
+                            multiple
+                            selectedItems={selectedLanguages}
+                            onToggleItem={toggleLanguage}
+                            options={languagesList}
+                            required
                         />
 
                         <FormInput label="Medical License Number" icon="card-outline" placeholder="License Number" value={medicalLicense} onChangeText={setMedicalLicense} required />
-                        
+
                         <SectionDivider title="Manage Detailed Affiliations" />
                         {Object.entries(detailedAffiliations).length === 0 ? (
                             <Text style={styles.emptyText}>No detailed affiliations found.</Text>
@@ -307,8 +307,8 @@ const AdminDoctorEditPage = () => {
                                             {aff.status?.toUpperCase()}
                                         </Text>
                                     </View>
-                                    <TouchableOpacity 
-                                        style={styles.removeAffBtn} 
+                                    <TouchableOpacity
+                                        style={styles.removeAffBtn}
                                         onPress={() => handleRemoveAffiliation(key, aff.hospitalName)}
                                     >
                                         <Ionicons name="trash-outline" size={20} color="#ba1a1a" />
@@ -317,7 +317,7 @@ const AdminDoctorEditPage = () => {
                             ))
                         )}
 
-                        <FormInput label="Hospital/Clinic Affiliation (Primary Display)" icon="business-outline" placeholder="Hospital Name" value={hospitalAffiliation} onChangeText={setHospitalAffiliation} required />
+                        <FormInput label="Hospital/Clinic Affiliation (Primary Display)" icon="business-outline" placeholder="Hospital Name" value={hospitalAffiliation} onChangeText={setHospitalAffiliation} />
 
                         <View style={styles.rowContainer}>
                             <View style={{ flex: 1 }}>
