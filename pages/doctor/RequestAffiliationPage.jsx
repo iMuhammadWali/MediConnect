@@ -11,8 +11,9 @@ const RequestAffiliationPage = () => {
     
     // Search states
     const [searchQuery, setSearchQuery] = useState("");
+    const [allHospitals, setAllHospitals] = useState([]);
     const [searchResults, setSearchResults] = useState([]);
-    const [isSearching, setIsSearching] = useState(false);
+    const [loadingHospitals, setLoadingHospitals] = useState(true);
     const [selectedHospital, setSelectedHospital] = useState(null);
 
     // Schedule states
@@ -26,45 +27,53 @@ const RequestAffiliationPage = () => {
     const DAYS_OF_WEEK = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
     useEffect(() => {
-        const fetchDoctorData = async () => {
+        const fetchInitialData = async () => {
             const uid = auth.currentUser?.uid;
             if (!uid) return;
+
+            // Fetch Doctor Data
             const docSnap = await get(ref(database, `doctors/${uid}`));
             if (docSnap.exists()) {
                 const data = docSnap.val();
                 setDoctorData(data);
-                // Guard: if not verified, redirect back
                 if (!data.isVerified) {
                     Alert.alert("Approval Required", "You need admin approval before adding affiliations.", [
                         { text: "OK", onPress: () => navigation.goBack() }
                     ]);
+                    return;
                 }
+            }
+
+            // Fetch All Hospitals
+            try {
+                const hospSnap = await get(ref(database, "hospitals"));
+                if (hospSnap.exists()) {
+                    const list = [];
+                    hospSnap.forEach(child => {
+                        list.push({ id: child.key, ...child.val() });
+                    });
+                    setAllHospitals(list);
+                }
+            } catch (err) {
+                console.error("Error fetching hospitals:", err);
+            } finally {
+                setLoadingHospitals(false);
             }
         };
-        fetchDoctorData();
+        fetchInitialData();
     }, []);
 
-    const handleSearch = async () => {
-        if (!searchQuery.trim()) return;
-        setIsSearching(true);
-        setSelectedHospital(null);
-        try {
-            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery + " hospital")}&limit=5`;
-            const response = await fetch(url, {
-                headers: {
-                    'User-Agent': 'MediConnectApp/1.0'
-                }
-            });
-            const data = await response.json();
-            setSearchResults(data);
-            if (data.length === 0) {
-                Alert.alert("No results", "Could not find any hospitals matching your query.");
-            }
-        } catch (error) {
-            Alert.alert("Search Error", "Failed to fetch hospital data.");
-        } finally {
-            setIsSearching(false);
+    const handleSearch = (text) => {
+        setSearchQuery(text);
+        if (!text.trim()) {
+            setSearchResults([]);
+            return;
         }
+        const filtered = allHospitals.filter(h => 
+            h.name.toLowerCase().includes(text.toLowerCase()) ||
+            h.address.toLowerCase().includes(text.toLowerCase())
+        );
+        setSearchResults(filtered);
     };
 
     const toggleDay = (day) => {
@@ -137,10 +146,10 @@ const RequestAffiliationPage = () => {
             const uid = auth.currentUser?.uid;
             const affilRef = push(ref(database, `doctors/${uid}/detailedAffiliations`));
             await set(affilRef, {
-                hospitalName: selectedHospital.name || selectedHospital.display_name.split(',')[0],
-                address: selectedHospital.display_name,
-                lat: selectedHospital.lat,
-                lon: selectedHospital.lon,
+                hospitalName: selectedHospital.name,
+                address: selectedHospital.address,
+                lat: selectedHospital.latitude,
+                lon: selectedHospital.longitude,
                 workingDays: selectedDays,
                 startTime,
                 endTime,
@@ -182,14 +191,14 @@ const RequestAffiliationPage = () => {
                         <View style={styles.searchRow}>
                             <TextInput
                                 style={styles.searchInput}
-                                placeholder="Hospital name (e.g. City Hospital)"
+                                placeholder={loadingHospitals ? "Loading hospitals..." : "Search registered hospitals..."}
                                 value={searchQuery}
-                                onChangeText={setSearchQuery}
-                                onSubmitEditing={handleSearch}
+                                onChangeText={handleSearch}
+                                editable={!loadingHospitals}
                             />
-                            <TouchableOpacity style={styles.searchBtn} onPress={handleSearch} disabled={isSearching}>
-                                {isSearching ? <ActivityIndicator color="#fff" size="small" /> : <Ionicons name="search" size={20} color="#fff" />}
-                            </TouchableOpacity>
+                            <View style={[styles.searchBtn, { backgroundColor: '#c4c5d6' }]}>
+                                {loadingHospitals ? <ActivityIndicator color="#fff" size="small" /> : <Ionicons name="business" size={20} color="#fff" />}
+                            </View>
                         </View>
 
                         {searchResults.length > 0 && !selectedHospital && (
@@ -201,9 +210,10 @@ const RequestAffiliationPage = () => {
                                         onPress={() => setSelectedHospital(item)}
                                     >
                                         <Ionicons name="business" size={20} color="#1a40c2" />
-                                        <Text style={styles.resultText} numberOfLines={2}>
-                                            {item.display_name}
-                                        </Text>
+                                        <View style={{ flex: 1, marginLeft: 12 }}>
+                                            <Text style={styles.resultItemName}>{item.name}</Text>
+                                            <Text style={styles.resultItemAddress} numberOfLines={1}>{item.address}</Text>
+                                        </View>
                                     </TouchableOpacity>
                                 ))}
                             </View>
@@ -214,8 +224,8 @@ const RequestAffiliationPage = () => {
                                 <View style={styles.selectedHospitalInfo}>
                                     <Ionicons name="business" size={24} color="#1a40c2" />
                                     <View style={{ flex: 1, marginLeft: 12 }}>
-                                        <Text style={styles.hospitalNameBold}>{selectedHospital.name || selectedHospital.display_name.split(',')[0]}</Text>
-                                        <Text style={styles.hospitalAddress} numberOfLines={2}>{selectedHospital.display_name}</Text>
+                                        <Text style={styles.hospitalNameBold}>{selectedHospital.name}</Text>
+                                        <Text style={styles.hospitalAddress} numberOfLines={2}>{selectedHospital.address}</Text>
                                     </View>
                                 </View>
                                 <TouchableOpacity onPress={() => setSelectedHospital(null)}>
@@ -331,7 +341,8 @@ const styles = StyleSheet.create({
     searchBtn: { backgroundColor: "#1a40c2", width: 48, borderRadius: 12, alignItems: "center", justifyContent: "center" },
     resultsContainer: { marginTop: 12, borderWidth: 1, borderColor: "#e6e8eb", borderRadius: 12, overflow: "hidden" },
     resultItem: { flexDirection: "row", alignItems: "center", padding: 12, borderBottomWidth: 1, borderBottomColor: "#e6e8eb", backgroundColor: "#fafbfc" },
-    resultText: { flex: 1, marginLeft: 12, fontSize: 13, color: "#444654", lineHeight: 18 },
+    resultItemName: { fontSize: 14, fontWeight: "bold", color: "#191c1e" },
+    resultItemAddress: { fontSize: 11, color: "#747686", marginTop: 2 },
     selectedHospitalCard: { marginTop: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#E6F1FB", padding: 16, borderRadius: 16, borderWidth: 1, borderColor: "rgba(26,64,194,0.2)" },
     selectedHospitalInfo: { flexDirection: "row", alignItems: "center", flex: 1 },
     hospitalNameBold: { fontSize: 15, fontWeight: "bold", color: "#1a40c2", marginBottom: 4 },
