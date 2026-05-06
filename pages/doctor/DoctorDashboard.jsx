@@ -14,6 +14,7 @@ const DoctorDashboardPage = () => {
     const [isVerified, setIsVerified] = useState(false);
     const [appointments, setAppointments] = useState([]);
     const [patientsMap, setPatientsMap] = useState({});
+    const [rating, setRating] = useState(0);
     
     useEffect(() => {
         const uid = auth.currentUser?.uid;
@@ -25,6 +26,7 @@ const DoctorDashboardPage = () => {
                 const data = snapshot.val();
                 setDoctorName(data.fullName);
                 setIsVerified(data.isVerified === true);
+                setRating(data.rating || 0);
             }
         });
 
@@ -62,7 +64,7 @@ const DoctorDashboardPage = () => {
     const stats = [
         { id: 1, title: "Upcoming Appts", value: upcomingApps.length.toString(), icon: "calendar-outline", color: "#E6F1FB", iconColor: "#1a40c2" },
         { id: 2, title: "Total Patients", value: totalPatients.toString(), icon: "people-outline", color: "#E6F1FB", iconColor: "#1a40c2" },
-        { id: 3, title: "Completed", value: appointments.filter(a => a.status === "Completed").length.toString(), icon: "checkmark-circle-outline", color: "#E6F1FB", iconColor: "#1a40c2" },
+        { id: 3, title: "Rating", value: rating.toString(), icon: "star", color: "#fff9db", iconColor: "#f59e0b" },
     ];
 
     const getApprovalBadge = () => {
@@ -210,7 +212,8 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        paddingBottom: 24,
+        paddingTop: 12,
+        paddingBottom: 40,
     },
     pendingBanner: {
         flexDirection: "row",
@@ -234,7 +237,7 @@ const styles = StyleSheet.create({
     statsSection: {
         flexDirection: "row",
         paddingHorizontal: 20,
-        marginTop: 24,
+        marginTop: 16,
         gap: 12,
     },
     statCard: {

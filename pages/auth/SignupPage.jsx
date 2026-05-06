@@ -179,8 +179,7 @@ const SignUpPage = () => {
         <SafeAreaView style={styles.container}>
             <KeyboardAvoidingView 
                 style={styles.keyboardView} 
-                behavior={Platform.OS === "ios" ? "padding" : undefined}
-                keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
             >
                 <ScrollView 
                     contentContainerStyle={styles.scrollContent} 

@@ -99,7 +99,7 @@ const DoctorDetailsPage = () => {
     const timeSlots = generateTimeSlots();
 
     const handleConfirm = () => {
-        if (!selectedAffiliation || !selectedDate || !selectedTime) {
+        if (!selectedAffiliation || selectedDate === null || !selectedTime) {
             Alert.alert("Incomplete", "Please select a hospital, date, and time slot.");
             return;
         }
