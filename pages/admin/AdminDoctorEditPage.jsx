@@ -128,8 +128,8 @@ const AdminDoctorEditPage = () => {
     }, [doctorUid]);
 
     const handleSave = async () => {
-        if (!fullName || !medicalLicense || !hospitalAffiliation || !experience || !consultationFee) {
-            Alert.alert("Error", "Please fill in all required fields");
+        if (!fullName || !medicalLicense || !experience) {
+            Alert.alert("Error", "Please fill in all required fields (Full Name, License, Experience)");
             return;
         }
         const expNum = parseInt(experience);
@@ -137,10 +137,13 @@ const AdminDoctorEditPage = () => {
             Alert.alert("Error", "Please enter valid years of experience");
             return;
         }
-        const feeNum = parseInt(consultationFee);
-        if (isNaN(feeNum) || feeNum < 0) {
-            Alert.alert("Error", "Please enter a valid consultation fee");
-            return;
+        let feeNum = 0;
+        if (consultationFee) {
+            feeNum = parseInt(consultationFee);
+            if (isNaN(feeNum) || feeNum < 0) {
+                Alert.alert("Error", "Please enter a valid consultation fee");
+                return;
+            }
         }
 
         setSaving(true);
@@ -324,7 +327,7 @@ const AdminDoctorEditPage = () => {
                                 <FormInput label="Experience (years)" icon="time-outline" placeholder="10" value={experience} onChangeText={setExperience} keyboardType="numeric" required />
                             </View>
                             <View style={{ flex: 1 }}>
-                                <FormInput label="Consultation Fee (PKR)" icon="cash-outline" placeholder="2000" value={consultationFee} onChangeText={setConsultationFee} keyboardType="numeric" required />
+                                <FormInput label="Consultation Fee (PKR)" icon="cash-outline" placeholder="2000" value={consultationFee} onChangeText={setConsultationFee} keyboardType="numeric" />
                             </View>
                         </View>
 
